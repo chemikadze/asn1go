@@ -9,7 +9,97 @@ import (
 	"bytes"
 	"strconv"
 	"math"
+	"unicode/utf8"
 )
+
+var (
+	RESERVED_WORDS map[string]int
+)
+
+func init() {
+	RESERVED_WORDS = map[string]int {
+		"ABSENT": ABSENT,
+		"ENCODED": ENCODED,
+		"INTEGER": INTEGER,
+		"RELATIVE-OID": RELATIVE_OID,
+		"ABSTRACT-SYNTAX": ABSTRACT_SYNTAX,
+		"END": END,
+		"INTERSECTION": INTERSECTION,
+		"SEQUENCE": SEQUENCE,
+		"ALL": ALL,
+		"ENUMERATED": ENUMERATED,
+		"ISO646String": ISO646String,
+		"SET": SET,
+		"APPLICATION": APPLICATION,
+		"EXCEPT": EXCEPT,
+		"MAX": MAX,
+		"SIZE": SIZE,
+		"AUTOMATIC": AUTOMATIC,
+		"EXPLICIT": EXPLICIT,
+		"MIN": MIN,
+		"STRING": STRING,
+		"BEGIN": BEGIN,
+		"EXPORTS": EXPORTS,
+		"MINUS-INFINITY": MINUS_INFINITY,
+		"SYNTAX": SYNTAX,
+		"BIT": BIT,
+		"EXTENSIBILITY": EXTENSIBILITY,
+		"NULL": NULL,
+		"T61String": T61String,
+		"BMPString": BMPString,
+		"EXTERNAL": EXTERNAL,
+		"NumericString": NumericString,
+		"TAGS": TAGS,
+		"BOOLEAN": BOOLEAN,
+		"FALSE": FALSE,
+		"OBJECT": OBJECT,
+		"TeletexString": TeletexString,
+		"BY": BY,
+		"FROM": FROM,
+		"ObjectDescriptor": ObjectDescriptor,
+		"TRUE": TRUE,
+		"CHARACTER": CHARACTER,
+		"GeneralizedTime": GeneralizedTime,
+		"OCTET": OCTET,
+		"TYPE-IDENTIFIER": TYPE_IDENTIFIER,
+		"CHOICE": CHOICE,
+		"GeneralString": GeneralString,
+		"OF": OF,
+		"UNION": UNION,
+		"CLASS": CLASS,
+		"GraphicString": GraphicString,
+		"OPTIONAL": OPTIONAL,
+		"UNIQUE": UNIQUE,
+		"COMPONENT": COMPONENT,
+		"IA5String": IA5String,
+		"PATTERN": PATTERN,
+		"UNIVERSAL": UNIVERSAL,
+		"COMPONENTS": COMPONENTS,
+		"IDENTIFIER": IDENTIFIER,
+		"PDV": PDV,
+		"UniversalString": UniversalString,
+		"CONSTRAINED": CONSTRAINED,
+		"IMPLICIT": IMPLICIT,
+		"PLUS-INFINITY": PLUS_INFINITY,
+		"UTCTime": UTCTime,
+		"CONTAINING": CONTAINING,
+		"IMPLIED": IMPLIED,
+		"PRESENT": PRESENT,
+		"UTF8String": UTF8String,
+		"DEFAULT": DEFAULT,
+		"IMPORTS": IMPORTS,
+		"PrintableString": PrintableString,
+		"VideotexString": VideotexString,
+		"DEFINITIONS": DEFINITIONS,
+		"INCLUDES": INCLUDES,
+		"PRIVATE": PRIVATE,
+		"VisibleString": VisibleString,
+		"EMBEDDED": EMBEDDED,
+		"INSTANCE": INSTANCE,
+		"REAL": REAL,
+		"WITH": WITH,
+	}
+}
 
 type MyLexer struct {
 	bufReader *bufio.Reader
@@ -42,22 +132,47 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 		}
 
 		// parse lexem
-		if unicode.IsUpper(r) {
+		if unicode.IsLetter(r) {
 			lex.unreadRune()
-			callback := func(s string) { lval.typeref = TypeReference(s) }
-			return lex.consumeWord(callback, TYPEREFERENCE, "TYPE REFERENCE")
-		} else if unicode.IsLower(r) {
-			lex.unreadRune()
-			callback := func(s string) { lval.identifier = Identifier(s) }
-			return lex.consumeWord(callback, IDENTIFIER, "IDENTIFIER")
+			content, err := lex.consumeWord()
+			if err != nil {
+				lex.Error(err.Error())
+				return -1
+			}
+			if unicode.IsUpper(r) {
+				code, exists := RESERVED_WORDS[content]
+				if exists {
+					return code
+				} else {
+					lval.typeref = TypeReference(content)
+					return TYPEREFERENCE
+				}
+			} else {
+				lval.identifier = Identifier(content)
+				return VALUEIDENTIFIER
+			}
 		} else if unicode.IsDigit(r) {
 			lex.unreadRune()
 			return lex.consumeNumberOrReal(lval, math.NaN())
-		} else if r == '-' {
+		} else if r == '-' && unicode.IsDigit(lex.peekRune()) {
 			return lex.consumeNumberOrReal(lval, -1)
+		} else if r == ':' && lex.peekRunes(2) == ":=" {
+			lex.discard(2)
+			return ASSIGNMENT
+		} else if r == '.' && lex.peekRunes(2) == ".." {
+			lex.discard(2)
+			return ELLIPSIS
+		} else if r == '.' && lex.peekRune() == '.' {
+			lex.discard(1)
+			return RANGE_SEPARATOR
+		} else if r == '[' && lex.peekRune() == '[' {
+			lex.discard(1)
+			return LEFT_VERSION_BRACKETS
+		} else if r == ']' && lex.peekRune() == ']' {
+			lex.discard(1)
+			return RIGHT_VERSION_BRACKETS
 		} else {
-			fmt.Printf("!!! Skipped '%c'\n", r)
-
+			return lex.consumeSingleSymbol(r)
 		}
 	}
 }
@@ -122,7 +237,57 @@ func (lex *MyLexer) consumeNumberOrReal(lval *yySymType, realStart float64) int 
 	} else {
 		lval.real = Real(realValue)
 		lval.numberRepr = fullRepr
-		return REAL
+		return REALNUMBER
+	}
+}
+
+func (lex *MyLexer) consumeSingleSymbol(r rune) int {
+	switch r {
+	case '{':
+		return OPEN_CURLY
+	case '}':
+		return CLOSE_CURLY
+	case '<':
+		return LESS
+	case '>':
+		return GREATER
+	case ',':
+		return COMMA
+	case '.':
+		return DOT
+	case '(':
+		return OPEN_ROUND
+	case ')':
+		return CLOSE_ROUND
+	case '[':
+		return OPEN_SQUARE
+	case ']':
+		return CLOSE_SQUARE
+	case '-':
+		return MINUS
+	case ':':
+		return COLON
+	case '=':
+		return EQUALS
+	case '"':
+		return QUOTATION_MARK
+	case '\'':
+		return APOSTROPHE
+	case ' ':  // TODO at which context it can be parsed?
+		return SPACE
+	case ';':
+		return SEMICOLON
+	case '@':
+		return AT
+	case '|':
+		return PIPE
+	case '!':
+		return EXCLAMATION
+	case '^':
+		return CARET
+	default:
+		lex.Error(fmt.Sprintf("Unexpected character: %c", r))
+		return -1
 	}
 }
 
@@ -142,6 +307,32 @@ func (lex *MyLexer) readRune() (rune, int, error) {
 func (lex *MyLexer) peekRune() rune {
 	r, _ := lex.peekRuneE()
 	return r
+}
+
+func (lex *MyLexer) discard(n int) {
+	lex.bufReader.Discard(n)
+}
+
+func (lex *MyLexer) peekRunes(n int) string {
+	acc := bytes.NewBufferString("")
+	pos := 0
+	for n > 0 {
+		for l := 1; l <= utf8.UTFMax; l++ {
+			buf, err := lex.bufReader.Peek(pos + l)
+			slice := buf[pos:pos+l]
+			if pos+l <= len(buf) && utf8.FullRune(slice) {
+				r, size := utf8.DecodeRune(slice)
+				acc.WriteRune(r)
+				pos += size
+				n -= 1
+				break
+			}
+			if err == io.EOF {  // TODO if it is not a full rune, will swallow the error
+				return acc.String()
+			}
+		}
+	}
+	return acc.String()
 }
 
 func (lex *MyLexer) peekRuneE() (rune, error) {
@@ -197,7 +388,7 @@ func (lex *MyLexer) skipBlockComment() {
 	}
 }
 
-func (lex *MyLexer) consumeWord(setter func(string), lexType int, lexName string) int {
+func (lex *MyLexer) consumeWord() (string, error) {
 	r, _, _ := lex.bufReader.ReadRune()
 	acc := bytes.NewBufferString("")
 	acc.WriteRune(r)
@@ -206,25 +397,21 @@ func (lex *MyLexer) consumeWord(setter func(string), lexType int, lexName string
 		r, _, err := lex.bufReader.ReadRune()
 		if err == io.EOF || isWhitespace(r)  {
 			label := acc.String()
-			setter(label)
 			if label[len(label)-1] == '-' {
-				lex.Error(fmt.Sprintf("%v can not end on hyphen, got %v", lexName, label))
-				return -1
+				return "", errors.New(fmt.Sprintf("Token can not end on hyphen, got %v", label))
 			}
-			return lexType
+			return label, nil
 		}
 		if err != nil {
-			lex.Error(fmt.Sprintf("Failed to read: %v", err.Error()))
-			return -1
+			return "", errors.New(fmt.Sprintf("Failed to read: %v", err.Error()))
 		}
 		if !isIdentifierChar(r) {
 			acc.WriteRune(r)
-			lex.Error(fmt.Sprintf("Expected valid identifier char, got '%c' while reading '%v'", r, acc.String()))
-			return -1
+			return "", errors.New(fmt.Sprintf("Expected valid identifier char, got '%c' while reading '%v'", r, acc.String()))
 		}
 		acc.WriteRune(r)
 		if lastR == '-' && r == '-' {
-			lex.Error(fmt.Sprintf("%v can not contain two hyphens in a row, got %v", lexName, acc.String()))
+			return "", errors.New(fmt.Sprintf("Token can not contain two hyphens in a row, got %v", acc.String()))
 		}
 		lastR = r
 	}
