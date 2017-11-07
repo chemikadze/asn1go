@@ -145,7 +145,7 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 					return code
 				} else {
 					lval.typeref = TypeReference(content)
-					return TYPEREFERENCE
+					return TYPEORMODULEREFERENCE
 				}
 			} else {
 				lval.identifier = Identifier(content)

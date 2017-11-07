@@ -4,26 +4,17 @@ import (
 	"testing"
 )
 
-func TestParseTypeReference(t *testing.T) {
-	name :=  "MyTypeReference"
-	result, err := ParseString(name)
+func testNotFails(t *testing.T, str string) {
+	_, err := ParseString(str)
 	if err != nil {
-		t.Errorf("Expected nil error, got %v", err.Error())
-	}
-	expected := TypeReference(name)
-	if result != expected {
-		t.Errorf("Expected %v got %v", expected, result)
+		t.Errorf("Expected nil error, got %v on %v", err.Error(), str)
 	}
 }
 
-func TestParseNumber(t *testing.T) {
-	name :=  "12345"
-	result, err := ParseString(name)
-	if err != nil {
-		t.Errorf("Expected nil error, got %v", err.Error())
-	}
-	expected := Number(12345)
-	if result != expected {
-		t.Errorf("Expected %v got %v", expected, result)
-	}
+func TestParseMinimalModule(t *testing.T) {
+	testNotFails(t, "MyModule DEFINITIONS ::= BEGIN END")
+	testNotFails(t, "MyModule { mymodule } DEFINITIONS ::= BEGIN END")
+	testNotFails(t, "MyModule DEFINITIONS IMPLICIT TAGS ::= BEGIN END")
+	testNotFails(t, "MyModule DEFINITIONS EXTENSIBILITY IMPLIED ::= BEGIN END")
 }
+

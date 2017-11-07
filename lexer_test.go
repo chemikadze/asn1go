@@ -87,8 +87,8 @@ func ui(t *yySymType) string {
 
 
 func TestTypeReference(t *testing.T) {
-	testLexem(t, utr, "MyTypeReference", TYPEREFERENCE, "MyTypeReference")
-	testLexem(t, utr, "My-Type-Reference", TYPEREFERENCE, "My-Type-Reference")
+	testLexem(t, utr, "MyTypeReference", TYPEORMODULEREFERENCE, "MyTypeReference")
+	testLexem(t, utr, "My-Type-Reference", TYPEORMODULEREFERENCE, "My-Type-Reference")
 	testError(t, "My--Type-Reference", "Token can not contain two hyphens in a row, got My--")
 	testError(t, "MyTypeReference-", "Token can not end on hyphen, got MyTypeReference-")
 	testError(t, "My$Type%Reference", "Expected valid identifier char, got '$' while reading 'My$'")

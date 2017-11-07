@@ -13,13 +13,12 @@ package asn1go
     number     Number
     real       Real
     numberRepr string
-    anyval     interface{}
 }
 
 %token WHITESPACE
 %token NEWLINE
-%token <typeref> TYPEREFERENCE      // note - also used for MODULEREFERENCE (semantics depends on context)
-%token <identifier> VALUEIDENTIFIER // note - also used for VALUEREFERENCE (semantics depends on context)
+%token <typeref> TYPEORMODULEREFERENCE   // note - also used for MODULEREFERENCE (semantics depends on context)
+%token <identifier> VALUEIDENTIFIER      // note - also used for VALUEREFERENCE (semantics depends on context)
 %token <number> NUMBER
 %token <real> REALNUMBER
 %token <bstring> BSTRING          // TODO not implemented in lexer
@@ -144,8 +143,6 @@ package asn1go
 %token REAL
 %token WITH
 
-%type <anyval> anytoken
-
 //
 // end declarations
 ////////////////////////////
@@ -159,20 +156,239 @@ package asn1go
 // Code inside the grammar actions may refer to the variable yylex,
 // which holds the yyLexer passed to yyParse.
 
-start : anytoken
-    {
-        yylex.(*MyLexer).result = $1
-    }
+//start : anytoken
+//    {
+//        yylex.(*MyLexer).result = $1
+//    }
+//;
+
+//anytoken : TYPEREFERENCE
+//            { $$ = $1 }
+//         | VALUEIDENTIFIER
+//            { $$ = $1 }
+//         | NUMBER
+//            { $$ = $1 }
+//         | REALNUMBER
+//            { $$ = $1 }
+//;
+
+ModuleDefinition :
+    ModuleIdentifier
+    DEFINITIONS
+    TagDefault
+    ExtensionDefault
+    ASSIGNMENT
+    BEGIN
+    ModuleBody
+    END
 ;
 
-anytoken : TYPEREFERENCE
-            { $$ = $1 }
-         | VALUEIDENTIFIER
-            { $$ = $1 }
-         | NUMBER
-            { $$ = $1 }
-         | REALNUMBER
-            { $$ = $1 }
+ModuleIdentifier :
+ TYPEORMODULEREFERENCE
+ DefinitiveIdentifier
+;
+
+DefinitiveIdentifier : OPEN_CURLY DefinitiveObjIdComponentList CLOSE_CURLY
+                     | /*empty*/
+;
+
+DefinitiveObjIdComponentList :  DefinitiveObjIdComponent
+                             | DefinitiveObjIdComponent DefinitiveObjIdComponentList
+;
+
+DefinitiveObjIdComponent : NameForm
+                         | DefinitiveNumberForm
+                         | DefinitiveNameAndNumberForm
+;
+
+DefinitiveNumberForm : NUMBER
+;
+
+DefinitiveNameAndNumberForm : VALUEIDENTIFIER OPEN_ROUND DefinitiveNumberForm CLOSE_ROUND
+;
+
+TagDefault : EXPLICIT TAGS
+           | IMPLICIT TAGS
+           | AUTOMATIC TAGS
+           | /*empty*/
+;
+
+ExtensionDefault : EXTENSIBILITY IMPLIED
+                 | /*empty*/
+;
+
+ModuleBody : Exports Imports AssignmentList
+           | /*empty*/
+;
+
+
+Exports : EXPORTS SymbolsExported SEMICOLON
+        | EXPORTS ALL SEMICOLON
+        | /*empty*/
+;
+
+SymbolsExported : SymbolList
+                | /*empty*/
+;
+
+Imports : IMPORTS SymbolsImported SEMICOLON
+        | /*empty*/
+;
+
+SymbolsImported : SymbolsFromModuleList
+                | /*empty*/
+;
+
+SymbolsFromModuleList : SymbolsFromModule
+                      | SymbolsFromModuleList SymbolsFromModule
+;
+
+SymbolsFromModule : SymbolList FROM GlobalModuleReference
+;
+
+GlobalModuleReference : TYPEORMODULEREFERENCE AssignedIdentifier
+;
+
+AssignedIdentifier : "t" "o" "d" "o"
+//                     ObjectIdentifierValue
+//                   | DefinedValue
+//                   | /*empty*/
+;
+
+SymbolList : Symbol
+           | SymbolList COMMA Symbol
+;
+
+Symbol : Reference
+//       | ParameterizedReference
+;
+
+Reference : TYPEORMODULEREFERENCE // modulereference
+          | VALUEIDENTIFIER       // valuereference
+//          | objectclassreference
+//          | objectreference
+//          | objectsetreference
+;
+
+AssignmentList : Assignment
+               | AssignmentList Assignment
+;
+
+Assignment : TypeAssignment
+           | ValueAssignment
+//           | XMLValueAssignment
+//           | ValueSetTypeAssignment
+//           | ObjectClassAssignment
+//           | ObjectAssignment
+//           | ObjectSetAssignment
+//           | ParameterizedAssignment
+;
+
+// 15.1
+
+TypeAssignment : TYPEORMODULEREFERENCE ASSIGNMENT Type
+;
+
+ValueAssignment : VALUEIDENTIFIER Type ASSIGNMENT Value
+;
+
+// 16.1
+
+Type : BuiltinType
+//     | ReferencedType
+//     | ConstrainedType
+;
+
+// 16.2
+
+BuiltinType : //BitStringType
+            | BooleanType
+//            | CharacterStringType
+//            | ChoiceType
+//            | EmbeddedPDVType
+//            | EnumeratedType
+//            | ExternalType
+//            | InstanceOfType
+            | IntegerType
+//            | NullType
+//            | ObjectClassFieldType
+//            | ObjectIdentifierType
+//            | OctetStringType
+//            | RealType
+//            | RelativeOIDType
+//            | SequenceType
+//            | SequenceOfType
+//            | SetType
+//            | SetOfType
+//            | TaggedType
+;
+
+// 16.7
+
+Value : BuiltinValue
+//      | ReferencedValue
+//      | ObjectClassFieldValue
+;
+
+// 16.8
+
+// TODO
+BuiltinValue : // BitStringValue
+             | BooleanValue
+//             | CharacterStringValue
+//             | ChoiceValue
+//             | EmbeddedPDVValue
+//             | EnumeratedValue
+//             | ExternalValue
+//             | InstanceOfValue
+             | IntegerValue
+//             | NullValue
+//             | ObjectIdentifierValue
+//             | OctetStringValue
+//             | RealValue
+//             | RelativeOIDValue
+//             | SequenceValue
+//             | SequenceOfValue
+//             | SetValue
+//             | SetOfValue
+//             | TaggedValue
+;
+
+// 17.3
+
+BooleanType : BOOLEAN
+;
+
+BooleanValue : TRUE | FALSE
+;
+
+// 18.1
+
+IntegerType : INTEGER
+            | INTEGER OPEN_CURLY NamedNumberList CLOSE_CURLY
+;
+
+NamedNumberList : NamedNumber
+                | NamedNumberList COMMA NamedNumber
+;
+
+NamedNumber : VALUEIDENTIFIER "(" SignedNumber ")"
+//          | VALUEIDENTIFIER "(" DefinedValue ")"
+;
+
+SignedNumber : NUMBER
+             | "-" NUMBER
+;
+
+// 18.9
+
+IntegerValue : SignedNumber
+             | VALUEIDENTIFIER
+;
+
+// 31.3
+
+NameForm : VALUEIDENTIFIER
 ;
 
 //
