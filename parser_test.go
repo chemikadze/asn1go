@@ -2,6 +2,7 @@ package asn1go
 
 import (
 	"testing"
+	"io/ioutil"
 )
 
 func testNotFails(t *testing.T, str string) *ModuleDefinition {
@@ -26,3 +27,10 @@ func TestParseMinimalModule(t *testing.T) {
 	}
 }
 
+func TestParseKerberos(t *testing.T) {
+	content, err := ioutil.ReadFile("examples/rfc4120.asn1")
+	if err != nil {
+		t.Errorf("Failed to read file: %s", err.Error())
+	}
+	testNotFails(t, string(content))
+}
