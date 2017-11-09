@@ -8,17 +8,20 @@ package asn1go
 
 // extra SymType fields
 %union{
-    typeref    TypeReference
-    identifier Identifier
+    name       string
     number     Number
     real       Real
     numberRepr string
+
+    TagDefault int
+    ExtensionDefault bool
+    ModuleIdentifier ModuleIdentifier
 }
 
 %token WHITESPACE
 %token NEWLINE
-%token <typeref> TYPEORMODULEREFERENCE
-%token <identifier> VALUEIDENTIFIER
+%token <name> TYPEORMODULEREFERENCE
+%token <name> VALUEIDENTIFIER
 %token <number> NUMBER
 %token <real> REALNUMBER
 %token <bstring> BSTRING          // TODO not implemented in lexer
@@ -143,6 +146,11 @@ package asn1go
 %token REAL
 %token WITH
 
+%type <name> modulereference
+%type <ExtensionDefault> ExtensionDefault
+%type <TagDefault> TagDefault
+%type <ModuleIdentifier> ModuleIdentifier
+
 //
 // end declarations
 ////////////////////////////
@@ -181,6 +189,7 @@ ModuleDefinition :
     BEGIN
     ModuleBody
     END
+    { yylex.(*MyLexer).result = &ModuleDefinition{ModuleIdentifier: $1, TagDefault: $3, ExtensibilityImplied: $4} }
 ;
 
 typereference: TYPEORMODULEREFERENCE;
@@ -192,8 +201,9 @@ valuereference: VALUEIDENTIFIER;
 identifier: VALUEIDENTIFIER;
 
 ModuleIdentifier :
- modulereference
- DefinitiveIdentifier
+                   modulereference
+                   DefinitiveIdentifier
+                   { $$ = ModuleIdentifier{Reference: $1} }
 ;
 
 DefinitiveIdentifier : OPEN_CURLY DefinitiveObjIdComponentList CLOSE_CURLY
@@ -215,14 +225,14 @@ DefinitiveNumberForm : NUMBER
 DefinitiveNameAndNumberForm : identifier OPEN_ROUND DefinitiveNumberForm CLOSE_ROUND
 ;
 
-TagDefault : EXPLICIT TAGS
-           | IMPLICIT TAGS
-           | AUTOMATIC TAGS
-           | /*empty*/
+TagDefault : EXPLICIT TAGS   { $$ = TAGS_EXPLICIT }
+           | IMPLICIT TAGS   { $$ = TAGS_IMPLICIT }
+           | AUTOMATIC TAGS  { $$ = TAGS_AUTOMATIC }
+           | /*empty*/       { $$ = TAGS_EXPLICIT }
 ;
 
-ExtensionDefault : EXTENSIBILITY IMPLIED
-                 | /*empty*/
+ExtensionDefault : EXTENSIBILITY IMPLIED { $$ = true }
+                 | /*empty*/             { $$ = false }
 ;
 
 ModuleBody : Exports Imports AssignmentList

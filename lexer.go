@@ -104,7 +104,7 @@ func init() {
 type MyLexer struct {
 	bufReader *bufio.Reader
 	err       error
-	result    AstNode
+	result    *ModuleDefinition
 
 	runeStack []rune
 }
@@ -144,11 +144,11 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 				if exists {
 					return code
 				} else {
-					lval.typeref = TypeReference(content)
+					lval.name = content
 					return TYPEORMODULEREFERENCE
 				}
 			} else {
-				lval.identifier = Identifier(content)
+				lval.name = content
 				return VALUEIDENTIFIER
 			}
 		} else if unicode.IsDigit(r) {

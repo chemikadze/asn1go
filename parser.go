@@ -5,7 +5,7 @@ import (
 	"bufio"
 )
 
-func ParseString(str string) (AstNode, error) {
+func ParseString(str string) (*ModuleDefinition, error) {
 	lex := &MyLexer{}
 	reader := strings.NewReader(str)
 	lex.bufReader = bufio.NewReader(reader)

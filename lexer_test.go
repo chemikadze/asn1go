@@ -78,11 +78,11 @@ func testError(t *testing.T, input string, expectedErr string) {
 }
 
 func utr(t *yySymType) string {
-	return string(t.typeref)
+	return t.name
 }
 
 func ui(t *yySymType) string {
-	return string(t.identifier)
+	return t.name
 }
 
 
