@@ -17,8 +17,8 @@ package asn1go
 
 %token WHITESPACE
 %token NEWLINE
-%token <typeref> TYPEORMODULEREFERENCE   // note - also used for MODULEREFERENCE (semantics depends on context)
-%token <identifier> VALUEIDENTIFIER      // note - also used for VALUEREFERENCE (semantics depends on context)
+%token <typeref> TYPEORMODULEREFERENCE
+%token <identifier> VALUEIDENTIFIER
 %token <number> NUMBER
 %token <real> REALNUMBER
 %token <bstring> BSTRING          // TODO not implemented in lexer
@@ -183,8 +183,16 @@ ModuleDefinition :
     END
 ;
 
+typereference: TYPEORMODULEREFERENCE;
+
+modulereference: TYPEORMODULEREFERENCE;
+
+valuereference: VALUEIDENTIFIER;
+
+identifier: VALUEIDENTIFIER;
+
 ModuleIdentifier :
- TYPEORMODULEREFERENCE
+ modulereference
  DefinitiveIdentifier
 ;
 
@@ -204,7 +212,7 @@ DefinitiveObjIdComponent : NameForm
 DefinitiveNumberForm : NUMBER
 ;
 
-DefinitiveNameAndNumberForm : VALUEIDENTIFIER OPEN_ROUND DefinitiveNumberForm CLOSE_ROUND
+DefinitiveNameAndNumberForm : identifier OPEN_ROUND DefinitiveNumberForm CLOSE_ROUND
 ;
 
 TagDefault : EXPLICIT TAGS
@@ -246,7 +254,7 @@ SymbolsFromModuleList : SymbolsFromModule
 SymbolsFromModule : SymbolList FROM GlobalModuleReference
 ;
 
-GlobalModuleReference : TYPEORMODULEREFERENCE AssignedIdentifier
+GlobalModuleReference : modulereference AssignedIdentifier
 ;
 
 AssignedIdentifier : "t" "o" "d" "o"
@@ -263,8 +271,8 @@ Symbol : Reference
 //       | ParameterizedReference
 ;
 
-Reference : TYPEORMODULEREFERENCE // modulereference
-          | VALUEIDENTIFIER       // valuereference
+Reference : modulereference // modulereference
+          | valuereference       // valuereference
 //          | objectclassreference
 //          | objectreference
 //          | objectsetreference
@@ -286,10 +294,10 @@ Assignment : TypeAssignment
 
 // 15.1
 
-TypeAssignment : TYPEORMODULEREFERENCE ASSIGNMENT Type
+TypeAssignment : typereference ASSIGNMENT Type
 ;
 
-ValueAssignment : VALUEIDENTIFIER Type ASSIGNMENT Value
+ValueAssignment : valuereference Type ASSIGNMENT Value
 ;
 
 // 16.1
@@ -372,8 +380,8 @@ NamedNumberList : NamedNumber
                 | NamedNumberList COMMA NamedNumber
 ;
 
-NamedNumber : VALUEIDENTIFIER "(" SignedNumber ")"
-//          | VALUEIDENTIFIER "(" DefinedValue ")"
+NamedNumber : identifier OPEN_ROUND SignedNumber CLOSE_ROUND
+//          | identifier OPEN_ROUND DefinedValue CLOSE_ROUND
 ;
 
 SignedNumber : NUMBER
@@ -383,12 +391,12 @@ SignedNumber : NUMBER
 // 18.9
 
 IntegerValue : SignedNumber
-             | VALUEIDENTIFIER
+             | identifier
 ;
 
 // 31.3
 
-NameForm : VALUEIDENTIFIER
+NameForm : identifier
 ;
 
 //
