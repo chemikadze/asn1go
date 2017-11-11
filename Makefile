@@ -8,8 +8,8 @@ runmain: y.go
 	go run main/main.go
 .PHONY: runmain
 
-clean: y.go
-	rm y.go
+clean:
+	rm -f y.go
 .PHONY: clean
 
 test: y.go
