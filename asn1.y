@@ -16,6 +16,9 @@ package asn1go
     TagDefault int
     ExtensionDefault bool
     ModuleIdentifier ModuleIdentifier
+    DefinitiveObjIdComponent DefinitiveObjIdComponent
+    DefinitiveObjIdComponentList []DefinitiveObjIdComponent
+    DefinitiveIdentifier DefinitiveIdentifier
 }
 
 %token WHITESPACE
@@ -147,9 +150,16 @@ package asn1go
 %token WITH
 
 %type <name> modulereference
+%type <name> identifier
 %type <ExtensionDefault> ExtensionDefault
 %type <TagDefault> TagDefault
 %type <ModuleIdentifier> ModuleIdentifier
+%type <DefinitiveObjIdComponent> DefinitiveObjIdComponent
+%type <number> DefinitiveNumberForm
+%type <DefinitiveObjIdComponentList> DefinitiveObjIdComponentList
+%type <DefinitiveObjIdComponent> DefinitiveNameAndNumberForm
+%type <DefinitiveIdentifier> DefinitiveIdentifier
+%type <name> NameForm
 
 //
 // end declarations
@@ -203,26 +213,27 @@ identifier: VALUEIDENTIFIER;
 ModuleIdentifier :
                    modulereference
                    DefinitiveIdentifier
-                   { $$ = ModuleIdentifier{Reference: $1} }
+                   { $$ = ModuleIdentifier{Reference: $1, DefinitiveIdentifier: $2} }
 ;
 
-DefinitiveIdentifier : OPEN_CURLY DefinitiveObjIdComponentList CLOSE_CURLY
-                     | /*empty*/
+DefinitiveIdentifier : OPEN_CURLY DefinitiveObjIdComponentList CLOSE_CURLY { $$ = DefinitiveIdentifier($2) }
+                     | /*empty*/ { $$ = DefinitiveIdentifier(make([]DefinitiveObjIdComponent, 0)) }
 ;
 
-DefinitiveObjIdComponentList :  DefinitiveObjIdComponent
-                             | DefinitiveObjIdComponent DefinitiveObjIdComponentList
+DefinitiveObjIdComponentList :  DefinitiveObjIdComponent  { $$ = append(make([]DefinitiveObjIdComponent, 0), $1) }
+                             | DefinitiveObjIdComponent DefinitiveObjIdComponentList  { $$ = append(append(make([]DefinitiveObjIdComponent, 0), $1), $2...) }
 ;
 
-DefinitiveObjIdComponent : NameForm
-                         | DefinitiveNumberForm
-                         | DefinitiveNameAndNumberForm
+DefinitiveObjIdComponent : NameForm  { $$ = DefinitiveObjIdComponent{Name: $1} }
+                         | DefinitiveNumberForm  { $$ = DefinitiveObjIdComponent{Id: $1.IntValue()} }
+                         | DefinitiveNameAndNumberForm  { $$ = $1 }
 ;
 
-DefinitiveNumberForm : NUMBER
+DefinitiveNumberForm : NUMBER  { $$ = $1 }
 ;
 
 DefinitiveNameAndNumberForm : identifier OPEN_ROUND DefinitiveNumberForm CLOSE_ROUND
+                                { $$ = DefinitiveObjIdComponent{Name: $1, Id: $3.IntValue()}  }
 ;
 
 TagDefault : EXPLICIT TAGS   { $$ = TAGS_EXPLICIT }

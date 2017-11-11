@@ -1,8 +1,8 @@
 package asn1go
 
 import (
-	"testing"
 	"io/ioutil"
+	"testing"
 )
 
 func testNotFails(t *testing.T, str string) *ModuleDefinition {
@@ -24,6 +24,42 @@ func TestParseMinimalModule(t *testing.T) {
 	r = testNotFails(t, "MyModule DEFINITIONS EXTENSIBILITY IMPLIED ::= BEGIN END")
 	if r.ExtensibilityImplied != true {
 		t.Error("EXTENSIBILITY IMPLIED should set the flag")
+	}
+}
+
+func TestDefinitiveIdentifier(t *testing.T) {
+	content := `
+	KerberosV5Spec2 {
+        iso(1) identified-organization(3) dod(6)
+        nameform
+        42 --numberform
+        mixedform(88)
+	} DEFINITIONS EXPLICIT TAGS ::= BEGIN
+	END
+	`
+	r := testNotFails(t, content)
+	if r.ModuleIdentifier.Reference != "KerberosV5Spec2" {
+		t.Errorf("Expected reference KerberosV5Spec2 to be parsed, got '%v'", r.ModuleIdentifier.Reference)
+	}
+	if len(r.ModuleIdentifier.DefinitiveIdentifier) != 6 {
+		t.Errorf("Expected 6 segments to be parsed, got %v", len(r.ModuleIdentifier.DefinitiveIdentifier))
+	}
+	expected := []DefinitiveObjIdComponent{
+		{"iso", 1},
+		{"identified-organization", 3},
+		{"dod", 6},
+		{Name: "nameform"},
+		{"", 42},
+		{"mixedform", 88},
+	}
+	for i, el := range r.ModuleIdentifier.DefinitiveIdentifier {
+		expectedEl := expected[i]
+		if el.Name != expectedEl.Name {
+			t.Errorf("Expected %v component '%v' got '%v'", i, el.Name, expectedEl.Name)
+		}
+		if el.Id != expectedEl.Id {
+			t.Errorf("Expected %v component '%v' got '%v'", i, el.Id, expectedEl.Id)
+		}
 	}
 }
 

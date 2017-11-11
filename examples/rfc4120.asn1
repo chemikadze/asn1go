@@ -1,7 +1,7 @@
-KerberosV5Spec2 /*TODO {
+KerberosV5Spec2 {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2) modules(4) krb5spec2(2)
-} ENDTODO*/ DEFINITIONS EXPLICIT TAGS ::= BEGIN
+} DEFINITIONS EXPLICIT TAGS ::= BEGIN
 /*TODO
 -- OID arc for KerberosV5
 --

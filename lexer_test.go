@@ -1,9 +1,9 @@
 package asn1go
 
 import (
-	"testing"
 	"bufio"
 	"strings"
+	"testing"
 )
 
 func lexForString(str string) *MyLexer {
@@ -72,7 +72,7 @@ func testError(t *testing.T, input string, expectedErr string) {
 	lex := lexForString(str)
 	symType := &yySymType{}
 	lex.Lex(symType)
-	if lex.err.Error() != expectedErr {
+	if lex.err == nil || lex.err.Error() != expectedErr {
 		t.Errorf("Expected '%v' error, got '%v'", expectedErr, lex.err)
 	}
 }
@@ -85,13 +85,11 @@ func ui(t *yySymType) string {
 	return t.name
 }
 
-
 func TestTypeReference(t *testing.T) {
 	testLexem(t, utr, "MyTypeReference", TYPEORMODULEREFERENCE, "MyTypeReference")
 	testLexem(t, utr, "My-Type-Reference", TYPEORMODULEREFERENCE, "My-Type-Reference")
 	testError(t, "My--Type-Reference", "Token can not contain two hyphens in a row, got My--")
 	testError(t, "MyTypeReference-", "Token can not end on hyphen, got MyTypeReference-")
-	testError(t, "My$Type%Reference", "Expected valid identifier char, got '$' while reading 'My$'")
 }
 
 func TestIdentifier(t *testing.T) {
@@ -103,6 +101,23 @@ func TestIdentifier(t *testing.T) {
 
 func TestSpacing(t *testing.T) {
 	testLexem(t, ui, "   myIdentifier   ", VALUEIDENTIFIER, "myIdentifier")
+}
+
+func TestNoSpacing(t *testing.T) {
+	lex := lexForString("myIdentifier(")
+	symType := &yySymType{}
+	if r := lex.Lex(symType); r != VALUEIDENTIFIER {
+		t.Errorf("Expected identifier (%v), got %v", VALUEIDENTIFIER, r)
+	}
+	if lex.err != nil {
+		t.Errorf("Got error: %v", lex.err)
+	}
+	if symType.name != "myIdentifier" {
+		t.Errorf("Expected myIdentifier, got '%v'", symType.name)
+	}
+	if r := lex.Lex(symType); r != OPEN_ROUND {
+		t.Errorf("Expected OPEN_ROUND (%v), got %v", OPEN_ROUND, r)
+	}
 }
 
 func TestComments(t *testing.T) {

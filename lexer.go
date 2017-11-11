@@ -2,13 +2,13 @@ package asn1go
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
-	"unicode"
 	"io"
-	"bytes"
-	"strconv"
 	"math"
+	"strconv"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -17,87 +17,87 @@ var (
 )
 
 func init() {
-	RESERVED_WORDS = map[string]int {
-		"ABSENT": ABSENT,
-		"ENCODED": ENCODED,
-		"INTEGER": INTEGER,
-		"RELATIVE-OID": RELATIVE_OID,
-		"ABSTRACT-SYNTAX": ABSTRACT_SYNTAX,
-		"END": END,
-		"INTERSECTION": INTERSECTION,
-		"SEQUENCE": SEQUENCE,
-		"ALL": ALL,
-		"ENUMERATED": ENUMERATED,
-		"ISO646String": ISO646String,
-		"SET": SET,
-		"APPLICATION": APPLICATION,
-		"EXCEPT": EXCEPT,
-		"MAX": MAX,
-		"SIZE": SIZE,
-		"AUTOMATIC": AUTOMATIC,
-		"EXPLICIT": EXPLICIT,
-		"MIN": MIN,
-		"STRING": STRING,
-		"BEGIN": BEGIN,
-		"EXPORTS": EXPORTS,
-		"MINUS-INFINITY": MINUS_INFINITY,
-		"SYNTAX": SYNTAX,
-		"BIT": BIT,
-		"EXTENSIBILITY": EXTENSIBILITY,
-		"NULL": NULL,
-		"T61String": T61String,
-		"BMPString": BMPString,
-		"EXTERNAL": EXTERNAL,
-		"NumericString": NumericString,
-		"TAGS": TAGS,
-		"BOOLEAN": BOOLEAN,
-		"FALSE": FALSE,
-		"OBJECT": OBJECT,
-		"TeletexString": TeletexString,
-		"BY": BY,
-		"FROM": FROM,
+	RESERVED_WORDS = map[string]int{
+		"ABSENT":           ABSENT,
+		"ENCODED":          ENCODED,
+		"INTEGER":          INTEGER,
+		"RELATIVE-OID":     RELATIVE_OID,
+		"ABSTRACT-SYNTAX":  ABSTRACT_SYNTAX,
+		"END":              END,
+		"INTERSECTION":     INTERSECTION,
+		"SEQUENCE":         SEQUENCE,
+		"ALL":              ALL,
+		"ENUMERATED":       ENUMERATED,
+		"ISO646String":     ISO646String,
+		"SET":              SET,
+		"APPLICATION":      APPLICATION,
+		"EXCEPT":           EXCEPT,
+		"MAX":              MAX,
+		"SIZE":             SIZE,
+		"AUTOMATIC":        AUTOMATIC,
+		"EXPLICIT":         EXPLICIT,
+		"MIN":              MIN,
+		"STRING":           STRING,
+		"BEGIN":            BEGIN,
+		"EXPORTS":          EXPORTS,
+		"MINUS-INFINITY":   MINUS_INFINITY,
+		"SYNTAX":           SYNTAX,
+		"BIT":              BIT,
+		"EXTENSIBILITY":    EXTENSIBILITY,
+		"NULL":             NULL,
+		"T61String":        T61String,
+		"BMPString":        BMPString,
+		"EXTERNAL":         EXTERNAL,
+		"NumericString":    NumericString,
+		"TAGS":             TAGS,
+		"BOOLEAN":          BOOLEAN,
+		"FALSE":            FALSE,
+		"OBJECT":           OBJECT,
+		"TeletexString":    TeletexString,
+		"BY":               BY,
+		"FROM":             FROM,
 		"ObjectDescriptor": ObjectDescriptor,
-		"TRUE": TRUE,
-		"CHARACTER": CHARACTER,
-		"GeneralizedTime": GeneralizedTime,
-		"OCTET": OCTET,
-		"TYPE-IDENTIFIER": TYPE_IDENTIFIER,
-		"CHOICE": CHOICE,
-		"GeneralString": GeneralString,
-		"OF": OF,
-		"UNION": UNION,
-		"CLASS": CLASS,
-		"GraphicString": GraphicString,
-		"OPTIONAL": OPTIONAL,
-		"UNIQUE": UNIQUE,
-		"COMPONENT": COMPONENT,
-		"IA5String": IA5String,
-		"PATTERN": PATTERN,
-		"UNIVERSAL": UNIVERSAL,
-		"COMPONENTS": COMPONENTS,
-		"IDENTIFIER": IDENTIFIER,
-		"PDV": PDV,
-		"UniversalString": UniversalString,
-		"CONSTRAINED": CONSTRAINED,
-		"IMPLICIT": IMPLICIT,
-		"PLUS-INFINITY": PLUS_INFINITY,
-		"UTCTime": UTCTime,
-		"CONTAINING": CONTAINING,
-		"IMPLIED": IMPLIED,
-		"PRESENT": PRESENT,
-		"UTF8String": UTF8String,
-		"DEFAULT": DEFAULT,
-		"IMPORTS": IMPORTS,
-		"PrintableString": PrintableString,
-		"VideotexString": VideotexString,
-		"DEFINITIONS": DEFINITIONS,
-		"INCLUDES": INCLUDES,
-		"PRIVATE": PRIVATE,
-		"VisibleString": VisibleString,
-		"EMBEDDED": EMBEDDED,
-		"INSTANCE": INSTANCE,
-		"REAL": REAL,
-		"WITH": WITH,
+		"TRUE":             TRUE,
+		"CHARACTER":        CHARACTER,
+		"GeneralizedTime":  GeneralizedTime,
+		"OCTET":            OCTET,
+		"TYPE-IDENTIFIER":  TYPE_IDENTIFIER,
+		"CHOICE":           CHOICE,
+		"GeneralString":    GeneralString,
+		"OF":               OF,
+		"UNION":            UNION,
+		"CLASS":            CLASS,
+		"GraphicString":    GraphicString,
+		"OPTIONAL":         OPTIONAL,
+		"UNIQUE":           UNIQUE,
+		"COMPONENT":        COMPONENT,
+		"IA5String":        IA5String,
+		"PATTERN":          PATTERN,
+		"UNIVERSAL":        UNIVERSAL,
+		"COMPONENTS":       COMPONENTS,
+		"IDENTIFIER":       IDENTIFIER,
+		"PDV":              PDV,
+		"UniversalString":  UniversalString,
+		"CONSTRAINED":      CONSTRAINED,
+		"IMPLICIT":         IMPLICIT,
+		"PLUS-INFINITY":    PLUS_INFINITY,
+		"UTCTime":          UTCTime,
+		"CONTAINING":       CONTAINING,
+		"IMPLIED":          IMPLIED,
+		"PRESENT":          PRESENT,
+		"UTF8String":       UTF8String,
+		"DEFAULT":          DEFAULT,
+		"IMPORTS":          IMPORTS,
+		"PrintableString":  PrintableString,
+		"VideotexString":   VideotexString,
+		"DEFINITIONS":      DEFINITIONS,
+		"INCLUDES":         INCLUDES,
+		"PRIVATE":          PRIVATE,
+		"VisibleString":    VisibleString,
+		"EMBEDDED":         EMBEDDED,
+		"INSTANCE":         INSTANCE,
+		"REAL":             REAL,
+		"WITH":             WITH,
 	}
 }
 
@@ -203,7 +203,7 @@ func (lex *MyLexer) consumeNumberOrReal(lval *yySymType, realStart float64) int 
 			}
 			fullRepr += lval.numberRepr
 			shift := float64(math.Pow10(int(math.Ceil(math.Log10(float64(lval.number))))))
-			realValue = realValue + float64(lval.number) / shift
+			realValue = realValue + float64(lval.number)/shift
 		}
 	}
 	if unicode.ToLower(lex.peekRune()) == 'e' {
@@ -273,7 +273,7 @@ func (lex *MyLexer) consumeSingleSymbol(r rune) int {
 		return QUOTATION_MARK
 	case '\'':
 		return APOSTROPHE
-	case ' ':  // TODO at which context it can be parsed?
+	case ' ': // TODO at which context it can be parsed?
 		return SPACE
 	case ';':
 		return SEMICOLON
@@ -319,7 +319,7 @@ func (lex *MyLexer) peekRunes(n int) string {
 	for n > 0 {
 		for l := 1; l <= utf8.UTFMax; l++ {
 			buf, err := lex.bufReader.Peek(pos + l)
-			slice := buf[pos:pos+l]
+			slice := buf[pos : pos+l]
 			if pos+l <= len(buf) && utf8.FullRune(slice) {
 				r, size := utf8.DecodeRune(slice)
 				acc.WriteRune(r)
@@ -327,7 +327,7 @@ func (lex *MyLexer) peekRunes(n int) string {
 				n -= 1
 				break
 			}
-			if err == io.EOF {  // TODO if it is not a full rune, will swallow the error
+			if err == io.EOF { // TODO if it is not a full rune, will swallow the error
 				return acc.String()
 			}
 		}
@@ -394,11 +394,14 @@ func (lex *MyLexer) consumeWord() (string, error) {
 	acc.WriteRune(r)
 	lastR := r
 	for {
-		r, _, err := lex.bufReader.ReadRune()
-		if err == io.EOF || isWhitespace(r)  {
+		r, _, err := lex.readRune()
+		if err == io.EOF || isWhitespace(r) || !isIdentifierChar(r) {
 			label := acc.String()
 			if label[len(label)-1] == '-' {
 				return "", errors.New(fmt.Sprintf("Token can not end on hyphen, got %v", label))
+			}
+			if err == nil {
+				lex.unreadRune()
 			}
 			return label, nil
 		}
@@ -482,18 +485,18 @@ func isNewline(r rune) bool {
 	switch x := int(r); x {
 	//LINE FEED (10)
 	case 10:
-		return true;
+		return true
 	//VERTICAL TABULATION (11)
 	case 11:
-		return true;
+		return true
 	//FORM FEED (12)
 	case 12:
-		return true;
+		return true
 	//CARRIAGE RETURN (13)
 	case 13:
-		return true;
+		return true
 	default:
-		return false;
+		return false
 	}
 }
 

@@ -3,16 +3,22 @@ package asn1go
 type AstNode interface{}
 
 type ModuleDefinition struct {
-	ModuleIdentifier ModuleIdentifier
-	// TODO DefinitiveIdentifier
-	TagDefault int
+	ModuleIdentifier     ModuleIdentifier
+	TagDefault           int
 	ExtensibilityImplied bool
-	Assignments map[Reference]AssignableItem
+	Assignments          map[Reference]AssignableItem
 }
 
 type ModuleIdentifier struct {
-	Reference string
-	// TODO DefinitiveIdentifier
+	Reference            string
+	DefinitiveIdentifier DefinitiveIdentifier
+}
+
+type DefinitiveIdentifier []DefinitiveObjIdComponent
+
+type DefinitiveObjIdComponent struct {
+	Name string
+	Id   int
 }
 
 const (
@@ -21,7 +27,7 @@ const (
 	TAGS_AUTOMATIC
 )
 
-type AssignableItem interface {}
+type AssignableItem interface{}
 
 type Reference interface {
 	Name() string
@@ -42,5 +48,9 @@ func (r ValueReference) Name() string {
 type Identifier string
 
 type Number int
+
+func (x Number) IntValue() int {
+	return int(x)
+}
 
 type Real float64
