@@ -1,8 +1,8 @@
 package asn1go
 
 import (
-	"strings"
 	"bufio"
+	"strings"
 )
 
 func ParseString(str string) (*ModuleDefinition, error) {
