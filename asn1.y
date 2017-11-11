@@ -1,6 +1,10 @@
 // header
 %{
 package asn1go
+
+import (
+    "fmt"
+)
 %}
 ////////////////////////////
 //  declarations section
@@ -19,6 +23,15 @@ package asn1go
     DefinitiveObjIdComponent DefinitiveObjIdComponent
     DefinitiveObjIdComponentList []DefinitiveObjIdComponent
     DefinitiveIdentifier DefinitiveIdentifier
+    Type Type
+    ObjIdComponents ObjIdComponents
+    DefinedValue DefinedValue
+    ObjectIdentifierValue ObjectIdentifierValue
+    Value Value
+    Assignment Assignment
+    AssignmentList AssignmentList
+    ModuleBody ModuleBody
+    ValueReference ValueReference
 }
 
 %token WHITESPACE
@@ -160,6 +173,24 @@ package asn1go
 %type <DefinitiveObjIdComponent> DefinitiveNameAndNumberForm
 %type <DefinitiveIdentifier> DefinitiveIdentifier
 %type <name> NameForm
+%type <DefinedValue> DefinedValue
+%type <Type> ObjectIdentifierType
+%type <Type> IntegerType
+%type <Type> BooleanType
+%type <Type> BuiltinType
+%type <Type> Type
+%type <ObjIdComponents> ObjIdComponents
+%type <ObjIdComponents> NumberForm
+%type <ObjIdComponents> NameAndNumberForm
+%type <ObjectIdentifierValue> ObjIdComponentsList
+%type <ObjectIdentifierValue> ObjectIdentifierValue
+%type <Value> BuiltinValue
+%type <Value> Value
+%type <Assignment> Assignment
+%type <Assignment> ValueAssignment
+%type <AssignmentList> AssignmentList
+%type <ModuleBody> ModuleBody
+%type <ValueReference> valuereference
 
 //
 // end declarations
@@ -199,14 +230,15 @@ ModuleDefinition :
     BEGIN
     ModuleBody
     END
-    { yylex.(*MyLexer).result = &ModuleDefinition{ModuleIdentifier: $1, TagDefault: $3, ExtensibilityImplied: $4} }
+    { yylex.(*MyLexer).result = &ModuleDefinition{ModuleIdentifier: $1, TagDefault: $3, ExtensibilityImplied: $4, ModuleBody: $7} }
 ;
 
 typereference: TYPEORMODULEREFERENCE;
 
 modulereference: TYPEORMODULEREFERENCE;
 
-valuereference: VALUEIDENTIFIER;
+valuereference: VALUEIDENTIFIER  {  $$ = ValueReference($1)  }
+;
 
 identifier: VALUEIDENTIFIER;
 
@@ -246,8 +278,8 @@ ExtensionDefault : EXTENSIBILITY IMPLIED { $$ = true }
                  | /*empty*/             { $$ = false }
 ;
 
-ModuleBody : Exports Imports AssignmentList
-           | /*empty*/
+ModuleBody : Exports Imports AssignmentList  { $$ = ModuleBody{AssignmentList: $3} }
+           | /*empty*/  { $$ = ModuleBody{} }
 ;
 
 
@@ -299,11 +331,11 @@ Reference : modulereference // modulereference
 //          | objectsetreference
 ;
 
-AssignmentList : Assignment
-               | AssignmentList Assignment
+AssignmentList : Assignment  { $$ = NewAssignmentList($1) }
+               | AssignmentList Assignment  { $$ = $1.Append($2) }
 ;
 
-Assignment : TypeAssignment
+Assignment : TypeAssignment  { $$ = nil }
            | ValueAssignment
 //           | XMLValueAssignment
 //           | ValueSetTypeAssignment
@@ -313,12 +345,20 @@ Assignment : TypeAssignment
 //           | ParameterizedAssignment
 ;
 
+// 13.3
+
+DefinedValue : "t" "o" "d" "o"  { $$ = DefinedValue{} }
+// ExternalValueReference
+// | Valuereference
+// | ParameterizedValue
+//;
+
 // 15.1
 
 TypeAssignment : typereference ASSIGNMENT Type
 ;
 
-ValueAssignment : valuereference Type ASSIGNMENT Value
+ValueAssignment : valuereference Type ASSIGNMENT Value  { $$ = ValueAssignment{$1, $2, $4} }
 ;
 
 // 16.1
@@ -331,7 +371,7 @@ Type : BuiltinType
 // 16.2
 
 BuiltinType : //BitStringType
-            | BooleanType
+            /*|*/ BooleanType
 //            | CharacterStringType
 //            | ChoiceType
 //            | EmbeddedPDVType
@@ -341,7 +381,7 @@ BuiltinType : //BitStringType
             | IntegerType
 //            | NullType
 //            | ObjectClassFieldType
-//            | ObjectIdentifierType
+            | ObjectIdentifierType
 //            | OctetStringType
 //            | RealType
 //            | RelativeOIDType
@@ -363,16 +403,16 @@ Value : BuiltinValue
 
 // TODO
 BuiltinValue : // BitStringValue
-             | BooleanValue
+//             | BooleanValue
 //             | CharacterStringValue
 //             | ChoiceValue
 //             | EmbeddedPDVValue
 //             | EnumeratedValue
 //             | ExternalValue
 //             | InstanceOfValue
-             | IntegerValue
+//             | IntegerValue
 //             | NullValue
-//             | ObjectIdentifierValue
+             /*|*/ ObjectIdentifierValue  { $$ = $1 }
 //             | OctetStringValue
 //             | RealValue
 //             | RelativeOIDValue
@@ -385,7 +425,7 @@ BuiltinValue : // BitStringValue
 
 // 17.3
 
-BooleanType : BOOLEAN
+BooleanType : BOOLEAN  { $$ = BooleanType{} }
 ;
 
 BooleanValue : TRUE | FALSE
@@ -393,8 +433,8 @@ BooleanValue : TRUE | FALSE
 
 // 18.1
 
-IntegerType : INTEGER
-            | INTEGER OPEN_CURLY NamedNumberList CLOSE_CURLY
+IntegerType : INTEGER  { $$ = IntegerType{} }
+            | INTEGER OPEN_CURLY NamedNumberList CLOSE_CURLY  { $$ = IntegerType{} }    // TODO support NamedNumberList
 ;
 
 NamedNumberList : NamedNumber
@@ -402,7 +442,7 @@ NamedNumberList : NamedNumber
 ;
 
 NamedNumber : identifier OPEN_ROUND SignedNumber CLOSE_ROUND
-//          | identifier OPEN_ROUND DefinedValue CLOSE_ROUND
+          | identifier OPEN_ROUND DefinedValue CLOSE_ROUND
 ;
 
 SignedNumber : NUMBER
@@ -415,7 +455,43 @@ IntegerValue : SignedNumber
              | identifier
 ;
 
+// 31.1
+
+ObjectIdentifierType : OBJECT IDENTIFIER  { $$ = ObjectIdentifierType{} }
+;
+
 // 31.3
+
+ObjectIdentifierValue : OPEN_CURLY ObjIdComponentsList CLOSE_CURLY  { $$ = $2 }
+                      | OPEN_CURLY DefinedValue ObjIdComponentsList CLOSE_CURLY  { $$ = NewObjectIdentifierValue($2).Append($3...) }
+;
+
+ObjIdComponentsList :  ObjIdComponents  { $$ = NewObjectIdentifierValue($1)  }
+                    | ObjIdComponents ObjIdComponentsList  { $$ = NewObjectIdentifierValue($1).Append($2...)  }
+;
+
+ObjIdComponents : NameForm  { $$ = ObjectIdElement{Name: $1} }
+                | NumberForm
+                | NameAndNumberForm
+                | DefinedValue  { $$ = $1 }
+;
+
+NumberForm : NUMBER   { $$ = ObjectIdElement{Id: $1.IntValue()} }
+           | DefinedValue  { $$ = $1 }
+;
+
+NameAndNumberForm : identifier OPEN_ROUND NumberForm CLOSE_ROUND
+    {
+        switch v := $3.(type) {
+        case DefinedValue:
+            $$ = ObjectIdElement{Name: $1, Reference: &v}
+        case ObjectIdElement:
+            $$ = ObjectIdElement{Name: $1, Id: v.Id}
+        default:
+            panic(fmt.Sprintf("Expected DefinedValue or ObjectIdElement from NumberForm, got %v", $3))
+        }
+    }
+;
 
 NameForm : identifier
 ;

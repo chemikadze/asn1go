@@ -2,7 +2,6 @@ KerberosV5Spec2 {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2) modules(4) krb5spec2(2)
 } DEFINITIONS EXPLICIT TAGS ::= BEGIN
-/*TODO
 -- OID arc for KerberosV5
 --
 -- This OID may be used to identify Kerberos protocol messages
@@ -15,7 +14,7 @@ id-krb5         OBJECT IDENTIFIER ::= {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2)
 }
-
+/*TODO
 Int32           ::= INTEGER (-2147483648..2147483647)
                     -- signed values representable in 32 bits
 

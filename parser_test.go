@@ -63,6 +63,56 @@ func TestDefinitiveIdentifier(t *testing.T) {
 	}
 }
 
+func TestValueAssignmentOID(t *testing.T) {
+	content := `
+	KerberosV5Spec2 DEFINITIONS ::= BEGIN
+		id-krb5         OBJECT IDENTIFIER ::= {
+    	    name-form
+    	    42  --number-form
+    	    name-and-number-form(77)
+		}
+	END
+	`
+	r := testNotFails(t, content)
+	assignments := r.ModuleBody.AssignmentList
+	if len(assignments) != 1 {
+		t.Fatalf("Expected 1 assignment to be parsed, got %v", len(assignments))
+	}
+	krb := assignments.GetValue("id-krb5")
+	if krb == nil {
+		t.Fatal("Expected assignment with name id-krb5 to exist, got nil")
+	}
+	if krb.ValueReference.Name() != "id-krb5" {
+		t.Errorf("Expected assignment LHS to be id-krb5, got %v", krb.ValueReference.Name())
+	}
+	if krb.Type != (ObjectIdentifierType{}) {
+		t.Errorf("Expected value to be of OID type, got %v", krb.Type)
+	}
+	switch v := krb.Value.(type) {
+	case ObjectIdentifierValue:
+		if v.Type() != krb.Type {
+			t.Errorf("Expected assignment value to have same type as assignment itself, got %v != %v", v.Type(), krb.Type)
+		}
+		expected := []ObjectIdElement{
+			{Name: "name-form"},
+			{Id: 42},
+			{Name: "name-and-number-form", Id: 77},
+		}
+		if len(expected) != len(v) {
+			t.Fatalf("Expected %v elements, got %v", len(expected), len(v))
+		}
+		for i, el := range v {
+			expectedEl := expected[i]
+			if el != expectedEl {
+				t.Errorf("Expected %v element to be %v, got %v", i, expectedEl, el)
+			}
+		}
+	default:
+		t.Errorf("Expected ObjectIdentifierValue, got %t", v)
+	}
+	// TODO test DefinedValue
+}
+
 func TestParseKerberos(t *testing.T) {
 	content, err := ioutil.ReadFile("examples/rfc4120.asn1")
 	if err != nil {
