@@ -4,9 +4,12 @@ default: y.go
 y.go: asn1.y
 	goyacc asn1.y
 
-runmain: y.go
-	go run main/main.go
-.PHONY: runmain
+deps:
+	go get golang.org/x/tools/cmd/goyacc
+.PHONY: deps
+
+codegen: y.go
+.PHONY: codegen
 
 clean:
 	rm -f y.go
