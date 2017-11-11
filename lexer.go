@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"strconv"
 	"unicode"
 	"unicode/utf8"
@@ -153,9 +152,7 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 			}
 		} else if unicode.IsDigit(r) {
 			lex.unreadRune()
-			return lex.consumeNumberOrReal(lval, math.NaN())
-		} else if r == '-' && unicode.IsDigit(lex.peekRune()) {
-			return lex.consumeNumberOrReal(lval, -1)
+			return lex.consumeNumber(lval)
 		} else if r == ':' && lex.peekRunes(2) == ":=" {
 			lex.discard(2)
 			return ASSIGNMENT
@@ -174,70 +171,6 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 		} else {
 			return lex.consumeSingleSymbol(r)
 		}
-	}
-}
-
-func (lex *MyLexer) consumeNumberOrReal(lval *yySymType, realStart float64) int {
-	// worknig on this function at 11 PM was bad idea
-	realValue := realStart
-	fullRepr := ""
-	if realStart == -1 {
-		fullRepr += "-"
-	}
-	res := lex.consumeNumber(lval)
-	if res != NUMBER {
-		return res
-	}
-	realValue *= float64(int(lval.number))
-	fullRepr = lval.numberRepr
-	if lex.peekRune() == '.' {
-		if math.IsNaN(realValue) {
-			realValue = float64(int(lval.number))
-		}
-		lex.readRune()
-		fullRepr += "."
-		if unicode.IsDigit(lex.peekRune()) {
-			res := lex.consumeNumber(lval)
-			if res != NUMBER {
-				return res
-			}
-			fullRepr += lval.numberRepr
-			shift := float64(math.Pow10(int(math.Ceil(math.Log10(float64(lval.number))))))
-			realValue = realValue + float64(lval.number)/shift
-		}
-	}
-	if unicode.ToLower(lex.peekRune()) == 'e' {
-		if math.IsNaN(realValue) {
-			realValue = float64(int(lval.number))
-		}
-		r, _, _ := lex.readRune()
-		fullRepr += string(r)
-		exponent := 1
-		possibleSignRune := lex.peekRune()
-		if possibleSignRune == '-' {
-			exponent = -1
-			fullRepr += string(possibleSignRune)
-			lex.readRune()
-		}
-		firstExponentRune := lex.peekRune()
-		if unicode.IsDigit(firstExponentRune) {
-			res := lex.consumeNumber(lval)
-			if res != NUMBER {
-				return res
-			}
-			exponent *= int(lval.number)
-			fullRepr += lval.numberRepr
-			realValue *= math.Pow10(exponent)
-		} else {
-			lex.Error(fmt.Sprintf("Expected exponent after '%v' got '%c'", fullRepr, firstExponentRune))
-		}
-	}
-	if math.IsNaN(realValue) {
-		return NUMBER
-	} else {
-		lval.real = Real(realValue)
-		lval.numberRepr = fullRepr
-		return REALNUMBER
 	}
 }
 

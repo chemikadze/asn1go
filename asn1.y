@@ -12,10 +12,10 @@ import (
 
 // extra SymType fields
 %union{
-    name       string
-    number     Number
-    real       Real
-    numberRepr string
+    name         string
+    number       Number
+    real         Real
+    numberRepr   string
 
     TagDefault int
     ExtensionDefault bool
@@ -39,7 +39,6 @@ import (
 %token <name> TYPEORMODULEREFERENCE
 %token <name> VALUEIDENTIFIER
 %token <number> NUMBER
-%token <real> REALNUMBER
 %token <bstring> BSTRING          // TODO not implemented in lexer
 %token <bstring> XMLBSTRING       // TODO not implemented in lexer
 %token <hstring> HSTRING          // TODO not implemented in lexer
@@ -162,6 +161,9 @@ import (
 %token REAL
 %token WITH
 
+%type <real> realnumber
+%type <number> SignedExponent
+
 %type <name> modulereference
 %type <name> identifier
 %type <ExtensionDefault> ExtensionDefault
@@ -204,22 +206,6 @@ import (
 
 // Code inside the grammar actions may refer to the variable yylex,
 // which holds the yyLexer passed to yyParse.
-
-//start : anytoken
-//    {
-//        yylex.(*MyLexer).result = $1
-//    }
-//;
-
-//anytoken : TYPEREFERENCE
-//            { $$ = $1 }
-//         | VALUEIDENTIFIER
-//            { $$ = $1 }
-//         | NUMBER
-//            { $$ = $1 }
-//         | REALNUMBER
-//            { $$ = $1 }
-//;
 
 ModuleDefinition :
     ModuleIdentifier
@@ -453,6 +439,35 @@ SignedNumber : NUMBER
 
 IntegerValue : SignedNumber
              | identifier
+;
+
+// 20.6
+
+RealValue : NumericRealValue
+          | SpecialRealValue
+;
+
+NumericRealValue : realnumber
+                 | "-" realnumber
+//                 | SequenceValue     // Value of the associated sequence type
+;
+
+SpecialRealValue : PLUS_INFINITY
+                 | MINUS_INFINITY
+;
+
+// TODO this seem to be not strict enough (spaces can sneak in into composite value)
+realnumber : NUMBER  { $$ = parseRealNumber($1, 0, 0) }
+           | NUMBER DOT NUMBER  { $$ = parseRealNumber($1, $3, 0) }
+           | NUMBER DOT NUMBER ExponentSymbol SignedExponent  { $$ = parseRealNumber($1, $3, $5) }
+           | NUMBER ExponentSymbol SignedExponent  { $$ = parseRealNumber($1, 0, $3) }
+;
+
+ExponentSymbol : "e" | "E"
+;
+
+SignedExponent : NUMBER
+               | MINUS NUMBER  { $$ = Number(-int($2)) }
 ;
 
 // 31.1

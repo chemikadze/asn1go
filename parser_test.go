@@ -120,3 +120,18 @@ func TestParseKerberos(t *testing.T) {
 	}
 	testNotFails(t, string(content))
 }
+
+func testReal(t *testing.T, input Real, expectedValue Real) {
+	if input != expectedValue {
+		t.Errorf("Expected real value to be '%v' to be read, got '%v'", expectedValue, input)
+	}
+}
+
+func TestRealBuilder(t *testing.T) {
+	testReal(t, parseRealNumber(0, 0, 0), Real(0.0))
+	testReal(t, parseRealNumber(1, 0, 0), Real(1.0))
+	testReal(t, parseRealNumber(12345, 0, 0), Real(12345.0))
+	testReal(t, parseRealNumber(12, 34, 0), Real(12.34))
+	testReal(t, parseRealNumber(2, 346, 1), Real(23.46))
+	testReal(t, parseRealNumber(23, 46, -1), Real(2.346))
+}

@@ -50,23 +50,6 @@ func testNumber(t *testing.T, input string, expectedValue Number) {
 	}
 }
 
-func testReal(t *testing.T, input string, expectedValue Real) {
-	str := input
-	lex := lexForString(str)
-	symType := &yySymType{}
-	gotType := lex.Lex(symType)
-	if lex.err != nil {
-		t.Errorf("Expected nil error, got %v", lex.err)
-	}
-	expectedType := REALNUMBER
-	if gotType != expectedType {
-		t.Errorf("Expected %v token, got %v", expectedType, gotType)
-	}
-	if symType.real != expectedValue {
-		t.Errorf("Expected lexem '%v' to be read, got '%v'", expectedValue, symType.real)
-	}
-}
-
 func testError(t *testing.T, input string, expectedErr string) {
 	str := input
 	lex := lexForString(str)
@@ -153,16 +136,6 @@ func TestNumber(t *testing.T) {
 	testNumber(t, "1", Number(1))
 	testNumber(t, "123", Number(123))
 	testNumber(t, "12345", Number(12345))
-}
-
-func TestReal(t *testing.T) {
-	testReal(t, "-1", Real(-1))
-	testReal(t, "0.", Real(0.0))
-	testReal(t, "1.", Real(1.0))
-	testReal(t, "12345.", Real(12345.0))
-	testReal(t, "12.34", Real(12.34))
-	testReal(t, "2.346e1", Real(23.46))
-	testReal(t, "23.46e-1", Real(2.346))
 }
 
 func TestAssignment(t *testing.T) {
@@ -313,4 +286,31 @@ func TestReservedWords(t *testing.T) {
 	testLexemType(t, "INSTANCE", INSTANCE)
 	testLexemType(t, "REAL", REAL)
 	testLexemType(t, "WITH", WITH)
+}
+
+func TestRangeSynax(t *testing.T) {
+	lexer := lexForString("-1..2")
+
+	sym := &yySymType{}
+	if l := lexer.Lex(sym); l != MINUS {
+		t.Fatalf("Expected lexem MINUS (%v) got %v", MINUS, l)
+	}
+
+	if l := lexer.Lex(sym); l != NUMBER {
+		t.Fatalf("Expected lexem NUMBER (%v) got %v", NUMBER, l)
+	}
+	if sym.number != Number(1) {
+		t.Errorf("Expected number value 1 got %v", sym.number)
+	}
+
+	if l := lexer.Lex(sym); l != RANGE_SEPARATOR {
+		t.Fatalf("Expected lexem RANGE_SEPARATOR (%v) got %v", RANGE_SEPARATOR, l)
+	}
+
+	if l := lexer.Lex(sym); l != NUMBER {
+		t.Fatalf("Expected lexem NUMBER (%v) got %v", NUMBER, l)
+	}
+	if sym.number != Number(2) {
+		t.Errorf("Expected number value 1 got %v", sym.number)
+	}
 }
