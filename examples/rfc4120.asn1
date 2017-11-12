@@ -14,16 +14,17 @@ id-krb5         OBJECT IDENTIFIER ::= {
         iso(1) identified-organization(3) dod(6) internet(1)
         security(5) kerberosV5(2)
 }
-/*TODO
+
 Int32           ::= INTEGER (-2147483648..2147483647)
                     -- signed values representable in 32 bits
+
 
 UInt32          ::= INTEGER (0..4294967295)
                     -- unsigned 32 bit values
 
 Microseconds    ::= INTEGER (0..999999)
                     -- microseconds
-
+/*TODO
 KerberosString  ::= GeneralString (IA5String)
 
 Realm           ::= KerberosString

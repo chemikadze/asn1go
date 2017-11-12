@@ -13,10 +13,10 @@ import (
 // extra SymType fields
 %union{
     name         string
-    number       Number
-    real         Real
     numberRepr   string
 
+    Number       Number
+    Real         Real
     TagDefault int
     ExtensionDefault bool
     ModuleIdentifier ModuleIdentifier
@@ -32,13 +32,24 @@ import (
     AssignmentList AssignmentList
     ModuleBody ModuleBody
     ValueReference ValueReference
+    TypeReference TypeReference
+    Constraint Constraint
+    ConstraintSpec ConstraintSpec
+    ElementSetSpec ElementSetSpec
+    Unions Unions
+    Intersections Intersections
+    IntersectionElements IntersectionElements
+    Exclusions Exclusions
+    Elements Elements
+    SubtypeConstraint SubtypeConstraint
+    RangeEndpoint RangeEndpoint
 }
 
 %token WHITESPACE
 %token NEWLINE
 %token <name> TYPEORMODULEREFERENCE
 %token <name> VALUEIDENTIFIER
-%token <number> NUMBER
+%token <Number> NUMBER
 %token <bstring> BSTRING          // TODO not implemented in lexer
 %token <bstring> XMLBSTRING       // TODO not implemented in lexer
 %token <hstring> HSTRING          // TODO not implemented in lexer
@@ -161,16 +172,17 @@ import (
 %token REAL
 %token WITH
 
-%type <real> realnumber
-%type <number> SignedExponent
+%type <Real> realnumber
+%type <Number> SignedExponent
 
 %type <name> modulereference
+%type <TypeReference> typereference
 %type <name> identifier
 %type <ExtensionDefault> ExtensionDefault
 %type <TagDefault> TagDefault
 %type <ModuleIdentifier> ModuleIdentifier
 %type <DefinitiveObjIdComponent> DefinitiveObjIdComponent
-%type <number> DefinitiveNumberForm
+%type <Number> DefinitiveNumberForm
 %type <DefinitiveObjIdComponentList> DefinitiveObjIdComponentList
 %type <DefinitiveObjIdComponent> DefinitiveNameAndNumberForm
 %type <DefinitiveIdentifier> DefinitiveIdentifier
@@ -188,11 +200,36 @@ import (
 %type <ObjectIdentifierValue> ObjectIdentifierValue
 %type <Value> BuiltinValue
 %type <Value> Value
+%type <Value> IntegerValue
+%type <Number> SignedNumber
 %type <Assignment> Assignment
 %type <Assignment> ValueAssignment
+%type <Assignment> TypeAssignment
 %type <AssignmentList> AssignmentList
 %type <ModuleBody> ModuleBody
 %type <ValueReference> valuereference
+%type <Type> ConstrainedType
+%type <Constraint> Constraint
+%type <ConstraintSpec> ConstraintSpec
+%type <SubtypeConstraint> SubtypeConstraint
+%type <SubtypeConstraint> ElementSetSpecs
+%type <SubtypeConstraint> RootElementSetSpec
+%type <ElementSetSpec> AdditionalElementSetSpec
+%type <ElementSetSpec> ElementSetSpec
+%type <Unions> Unions
+%type <Unions> UElems
+%type <Intersections> Intersections
+%type <Intersections> IElems
+%type <IntersectionElements> IntersectionElements
+%type <Exclusions> Exclusions
+%type <Elements> Elements
+%type <Elements> Elems
+%type <Elements> SingleValue
+%type <Elements> ValueRange
+%type <Elements> SubtypeElements
+%type <RangeEndpoint> LowerEndpoint UpperEndpoint
+%type <Value> LowerEndValue UpperEndValue
+
 
 //
 // end declarations
@@ -219,7 +256,8 @@ ModuleDefinition :
     { yylex.(*MyLexer).result = &ModuleDefinition{ModuleIdentifier: $1, TagDefault: $3, ExtensibilityImplied: $4, ModuleBody: $7} }
 ;
 
-typereference: TYPEORMODULEREFERENCE;
+typereference: TYPEORMODULEREFERENCE  { $$ = TypeReference($1) }
+;
 
 modulereference: TYPEORMODULEREFERENCE;
 
@@ -321,7 +359,7 @@ AssignmentList : Assignment  { $$ = NewAssignmentList($1) }
                | AssignmentList Assignment  { $$ = $1.Append($2) }
 ;
 
-Assignment : TypeAssignment  { $$ = nil }
+Assignment : TypeAssignment
            | ValueAssignment
 //           | XMLValueAssignment
 //           | ValueSetTypeAssignment
@@ -341,7 +379,7 @@ DefinedValue : "t" "o" "d" "o"  { $$ = DefinedValue{} }
 
 // 15.1
 
-TypeAssignment : typereference ASSIGNMENT Type
+TypeAssignment : typereference ASSIGNMENT Type  { $$ = TypeAssignment{$1, $3} }
 ;
 
 ValueAssignment : valuereference Type ASSIGNMENT Value  { $$ = ValueAssignment{$1, $2, $4} }
@@ -351,7 +389,7 @@ ValueAssignment : valuereference Type ASSIGNMENT Value  { $$ = ValueAssignment{$
 
 Type : BuiltinType
 //     | ReferencedType
-//     | ConstrainedType
+     | ConstrainedType
 ;
 
 // 16.2
@@ -396,9 +434,9 @@ BuiltinValue : // BitStringValue
 //             | EnumeratedValue
 //             | ExternalValue
 //             | InstanceOfValue
-//             | IntegerValue
+             /*|*/ IntegerValue
 //             | NullValue
-             /*|*/ ObjectIdentifierValue  { $$ = $1 }
+               | ObjectIdentifierValue  { $$ = $1 }
 //             | OctetStringValue
 //             | RealValue
 //             | RelativeOIDValue
@@ -431,14 +469,14 @@ NamedNumber : identifier OPEN_ROUND SignedNumber CLOSE_ROUND
           | identifier OPEN_ROUND DefinedValue CLOSE_ROUND
 ;
 
-SignedNumber : NUMBER
-             | "-" NUMBER
+SignedNumber : NUMBER  { $$ = $1 }
+             | MINUS NUMBER  { $$ = $2.UnaryMinus() }
 ;
 
 // 18.9
 
-IntegerValue : SignedNumber
-             | identifier
+IntegerValue : SignedNumber  { $$ = $1 }
+             | identifier  { $$ = IdentifiedIntegerValue{Name: $1} }
 ;
 
 // 20.6
@@ -510,6 +548,133 @@ NameAndNumberForm : identifier OPEN_ROUND NumberForm CLOSE_ROUND
 
 NameForm : identifier
 ;
+
+// 45.1
+
+ConstrainedType : Type Constraint  { $$ = ConstraintedType{$1, $2} }
+//                | TypeWithConstraint
+;
+
+// 45.6
+
+Constraint : OPEN_ROUND ConstraintSpec ExceptionSpec CLOSE_ROUND  { $$ = Constraint{ConstraintSpec: $2} }
+;
+
+ConstraintSpec : SubtypeConstraint  { $$ = $1 }
+//               | GeneralConstraint
+;
+
+SubtypeConstraint : ElementSetSpecs
+;
+
+// 46.1
+
+ElementSetSpecs : RootElementSetSpec
+                | RootElementSetSpec COMMA ELLIPSIS  { $$ = $1 }
+                | RootElementSetSpec COMMA ELLIPSIS COMMA AdditionalElementSetSpec  { $$ = append($1, $5) }
+;
+
+RootElementSetSpec : ElementSetSpec  { $$ = SubtypeConstraint{$1} }
+;
+
+AdditionalElementSetSpec : ElementSetSpec
+;
+
+ElementSetSpec : Unions  { $$ = $1 }
+               | ALL Exclusions  { $$ = $2 }
+;
+
+Unions : Intersections  { $$ = Unions{$1} }
+       | UElems UnionMark Intersections    { $$ = append($1, $3) }
+;
+
+UElems : Unions
+;
+
+Intersections : IntersectionElements { $$ = Intersections{$1} }
+              | IElems IntersectionMark IntersectionElements  { $$ = append($1, $3)  }
+;
+
+IElems : Intersections
+;
+
+IntersectionElements : Elements  { $$ = IntersectionElements{Elements: $1} }
+                     | Elems Exclusions  { $$ = IntersectionElements{Elements: $1, Exclusions: $2} }
+;
+
+Elems : Elements
+;
+
+Exclusions : EXCEPT Elements  { $$ = Exclusions{$2} }
+;
+
+UnionMark : PIPE | UNION
+;
+
+IntersectionMark : CARET | INTERSECTION
+;
+
+Elements : SubtypeElements { $$ = $1 }
+//         | ObjectSetElements
+         | OPEN_ROUND ElementSetSpec CLOSE_ROUND  { $$ = $2 }
+;
+
+SubtypeElements : SingleValue
+//                | ContainedSubtype
+                | ValueRange
+//                | PermittedAlphabet
+//                | SizeConstraint
+//                | TypeConstraint
+//                | InnerTypeConstraints
+//                | PatternConstraint
+;
+
+// 47.2
+
+SingleValue : Value  { $$ = SingleValue{$1} }
+;
+
+// 47.4
+
+ValueRange : LowerEndpoint RANGE_SEPARATOR UpperEndpoint  { $$ = ValueRange{$1, $3} }
+;
+
+LowerEndpoint : LowerEndValue  { $$ = RangeEndpoint{Value: $1} }
+              | LowerEndValue LESS   { $$ = RangeEndpoint{Value: $1, IsOpen: true} }
+;
+
+UpperEndpoint : UpperEndValue  { $$ = RangeEndpoint{Value: $1} }
+              | LESS UpperEndValue   { $$ = RangeEndpoint{Value: $2, IsOpen: true} }
+;
+
+LowerEndValue : Value
+              | MIN  { $$ = nil }
+;
+
+UpperEndValue : Value
+              | MAX  { $$ = nil }
+;
+
+// 49.4
+
+ExceptionSpec : EXCLAMATION ExceptionIdentification
+              | /* empty */
+;
+
+ExceptionIdentification : SignedNumber
+                        | DefinedValue
+                        | Type COLON Value
+;
+
+///// X.681
+
+// 12.10
+
+// ObjectSetElements ::=
+//  Object
+//  | DefinedObjectSet
+//  | ObjectSetFromObjects
+//  | ParameterizedObjectSet
 
 //
 // end grammar

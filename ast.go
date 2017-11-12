@@ -69,10 +69,24 @@ func (l AssignmentList) GetValue(name string) *ValueAssignment {
 	}
 }
 
+func (l AssignmentList) GetType(name string) *TypeAssignment {
+	a := l.Get(name)
+	if a == nil {
+		return nil
+	}
+	switch r := a.(type) {
+	case TypeAssignment:
+		return &r
+	default:
+		return nil
+	}
+}
+
 type Assignment interface {
 	Reference() Reference
 }
 
+// assigns Value of Type to ValueReference
 type ValueAssignment struct {
 	ValueReference ValueReference
 	Type           Type
@@ -81,6 +95,16 @@ type ValueAssignment struct {
 
 func (v ValueAssignment) Reference() Reference {
 	return v.ValueReference
+}
+
+// assigns Type to TypeReference
+type TypeAssignment struct {
+	TypeReference TypeReference
+	Type          Type
+}
+
+func (v TypeAssignment) Reference() Reference {
+	return v.TypeReference
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,11 +131,19 @@ func (r ValueReference) Name() string {
 // identifier type
 type Identifier string
 
-// number lexem
+// number lexem, implements Value
 type Number int
 
 func (x Number) IntValue() int {
 	return int(x)
+}
+
+func (Number) Type() Type {
+	return IntegerType{}
+}
+
+func (x Number) UnaryMinus() Number {
+	return Number(-int(x))
 }
 
 // real lexem
@@ -147,6 +179,98 @@ func (BooleanType) Zero() interface{} {
 	return false
 }
 
+// type with constraints
+type ConstraintedType struct {
+	Type       Type
+	Constraint Constraint
+}
+
+func (t ConstraintedType) Zero() interface{} {
+	return t.Type.Zero()
+}
+
+type Constraint struct {
+	ConstraintSpec ConstraintSpec
+	//ExceptionSpec ExceptionSpec
+}
+
+// ConstraintSpec can be SubtypeConstraint or GeneralConstraint
+type ConstraintSpec interface {
+	IsConstraintSpec()
+}
+
+// SubtypeConstraint describes list of element sets that can be used in constainted type
+type SubtypeConstraint []ElementSetSpec
+
+func (SubtypeConstraint) IsConstraintSpec() {}
+
+// Union or Exclusion
+type ElementSetSpec interface {
+	Elements
+	IsElementSpec()
+}
+
+// Unions is ElementSetSpec and Elements
+type Unions []Intersections
+
+func (Unions) IsElementSpec() {}
+
+func (Unions) IsElements() {}
+
+// part of the Union
+type Intersections []IntersectionElements
+
+type IntersectionElements struct {
+	Elements   Elements
+	Exclusions Exclusions
+}
+
+// Exclusion is ElementSetSpec and Elements
+type Exclusions struct {
+	Elements Elements
+}
+
+func (Exclusions) IsElementSpec() {}
+
+func (Exclusions) IsElements() {}
+
+// Describe elements of Intersections or Exclusions
+type Elements interface {
+	IsElements()
+}
+
+// subtype elements
+
+// SingleValue is Elements
+type SingleValue struct {
+	Value
+}
+
+func (SingleValue) IsElements() {}
+
+// ValueRange is Elements
+type ValueRange struct {
+	LowerEndpoint RangeEndpoint
+	UpperEndpoint RangeEndpoint
+}
+
+func (ValueRange) IsElements() {}
+
+type RangeEndpoint struct {
+	Value  Value
+	IsOpen bool // X<..<X
+}
+
+// IsUnspecified corresponds to MIN or MAX
+func (e RangeEndpoint) IsUnspecified() bool {
+	return e.Value == nil
+}
+
+// TODO
+type GeneralConstraint struct{}
+
+func (GeneralConstraint) IsConstraintSpec() {}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // values
 
@@ -164,6 +288,16 @@ func (DefinedValue) Type() Type {
 
 func (DefinedValue) IsObjectIdComponent() bool {
 	return true
+}
+
+// element of integer type referenced by name
+type IdentifiedIntegerValue struct {
+	valueType Type
+	Name      string
+}
+
+func (x IdentifiedIntegerValue) Type() Type {
+	return x.valueType
 }
 
 //////////////////////////////

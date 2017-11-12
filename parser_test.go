@@ -2,13 +2,14 @@ package asn1go
 
 import (
 	"io/ioutil"
+	"reflect"
 	"testing"
 )
 
 func testNotFails(t *testing.T, str string) *ModuleDefinition {
 	def, err := ParseString(str)
 	if err != nil {
-		t.Errorf("Expected nil error, got %v on %v", err.Error(), str)
+		t.Errorf("Failed to parse %v\n\nExpected nil error, got %v", str, err.Error())
 	}
 	return def
 }
@@ -134,4 +135,66 @@ func TestRealBuilder(t *testing.T) {
 	testReal(t, parseRealNumber(12, 34, 0), Real(12.34))
 	testReal(t, parseRealNumber(2, 346, 1), Real(23.46))
 	testReal(t, parseRealNumber(23, 46, -1), Real(2.346))
+}
+
+func TestTypeConstraint(t *testing.T) {
+	content := `
+	KerberosV5Spec2 DEFINITIONS ::= BEGIN
+		Int32 ::= INTEGER (0..5 | 42^10..15)  -- note, UNION has lower precedence than INTERSECTION
+	END
+	`
+	r := testNotFails(t, content)
+	expectedType := ConstraintedType{
+		Type: IntegerType{},
+		Constraint: Constraint{
+			ConstraintSpec: SubtypeConstraint{Unions{
+				Intersections{
+					{Elements: ValueRange{
+						LowerEndpoint: RangeEndpoint{Value: Number(0)},
+						UpperEndpoint: RangeEndpoint{Value: Number(5)}}}},
+				Intersections{
+					{Elements: SingleValue{Number(42)}},
+					{Elements: ValueRange{
+						LowerEndpoint: RangeEndpoint{Value: Number(10)},
+						UpperEndpoint: RangeEndpoint{Value: Number(15)}}}}},
+			},
+		},
+	}
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("Int32")
+	if parsedAssignment == nil {
+		t.Fatal("Expected Int32 in assignments")
+	}
+	if reflect.TypeOf(parsedAssignment.Type) != reflect.TypeOf(expectedType) {
+		t.Errorf("Expected %v got %v", expectedType, parsedAssignment)
+	}
+	parsedType := parsedAssignment.Type.(ConstraintedType)
+	if reflect.TypeOf(parsedType.Type) != reflect.TypeOf(expectedType.Type) {
+		t.Errorf("Expected type to be %v got %v", expectedType.Type, parsedType.Type)
+	}
+	parsedConstrant := parsedType.Constraint.ConstraintSpec.(SubtypeConstraint)
+	expectedConstraint := expectedType.Constraint.ConstraintSpec.(SubtypeConstraint)
+	if len(parsedConstrant) != len(expectedConstraint) {
+		t.Errorf("Constraint length mismatch:\n exp %v\n got %v", expectedConstraint, parsedConstrant)
+	}
+	for i := range parsedConstrant {
+		parsedUnions := parsedConstrant[i].(Unions)
+		expectedUnions := expectedConstraint[i].(Unions)
+		if len(parsedUnions) != len(expectedUnions) {
+			t.Fatalf("Unions length mismatch:\n exp %v\n got %v", expectedUnions, parsedUnions)
+		}
+		for j := range parsedUnions {
+			parsedInters := parsedUnions[j]
+			expectedInters := expectedUnions[j]
+			if len(parsedInters) != len(expectedInters) {
+				t.Fatalf("Intersections length mismatch:\n exp %v\n got %v", expectedInters, parsedInters)
+			}
+			for k := range parsedInters {
+				parsedIntElem := parsedInters[k]
+				expectedIntElem := expectedInters[k]
+				if parsedIntElem.Elements != expectedIntElem.Elements {
+					t.Errorf("Intersection elements mismatch:\n exp %v\n got %v", expectedIntElem, parsedIntElem)
+				}
+			}
+		}
+	}
 }

@@ -45,8 +45,8 @@ func testNumber(t *testing.T, input string, expectedValue Number) {
 	if gotType != expectedType {
 		t.Errorf("Expected %v token, got %v", expectedType, gotType)
 	}
-	if symType.number != expectedValue {
-		t.Errorf("Expected lexem '%v' to be read, got '%v'", expectedValue, symType.number)
+	if symType.Number != expectedValue {
+		t.Errorf("Expected lexem '%v' to be read, got '%v'", expectedValue, symType.Number)
 	}
 }
 
@@ -289,9 +289,17 @@ func TestReservedWords(t *testing.T) {
 }
 
 func TestRangeSynax(t *testing.T) {
-	lexer := lexForString("-1..2")
+	lexer := lexForString("INTEGER (-2147483648..2147483647)")
 
 	sym := &yySymType{}
+	if l := lexer.Lex(sym); l != INTEGER {
+		t.Fatalf("Expected lexem INTEGER (%v) got %v", INTEGER, l)
+	}
+
+	if l := lexer.Lex(sym); l != OPEN_ROUND {
+		t.Fatalf("Expected lexem OPEN_ROUND (%v) got %v", OPEN_ROUND, l)
+	}
+
 	if l := lexer.Lex(sym); l != MINUS {
 		t.Fatalf("Expected lexem MINUS (%v) got %v", MINUS, l)
 	}
@@ -299,8 +307,8 @@ func TestRangeSynax(t *testing.T) {
 	if l := lexer.Lex(sym); l != NUMBER {
 		t.Fatalf("Expected lexem NUMBER (%v) got %v", NUMBER, l)
 	}
-	if sym.number != Number(1) {
-		t.Errorf("Expected number value 1 got %v", sym.number)
+	if sym.Number != Number(2147483648) {
+		t.Errorf("Expected number value 2147483648 got %v", sym.Number)
 	}
 
 	if l := lexer.Lex(sym); l != RANGE_SEPARATOR {
@@ -310,7 +318,11 @@ func TestRangeSynax(t *testing.T) {
 	if l := lexer.Lex(sym); l != NUMBER {
 		t.Fatalf("Expected lexem NUMBER (%v) got %v", NUMBER, l)
 	}
-	if sym.number != Number(2) {
-		t.Errorf("Expected number value 1 got %v", sym.number)
+	if sym.Number != Number(2147483647) {
+		t.Errorf("Expected number value 2147483648 got %v", sym.Number)
+	}
+
+	if l := lexer.Lex(sym); l != CLOSE_ROUND {
+		t.Fatalf("Expected lexem CLOSE_ROUND (%v) got %v", CLOSE_ROUND, l)
 	}
 }
