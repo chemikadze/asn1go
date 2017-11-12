@@ -137,7 +137,7 @@ func TestRealBuilder(t *testing.T) {
 	testReal(t, parseRealNumber(23, 46, -1), Real(2.346))
 }
 
-func TestTypeConstraint(t *testing.T) {
+func TestRangeTypeConstraint(t *testing.T) {
 	content := `
 	KerberosV5Spec2 DEFINITIONS ::= BEGIN
 		Int32 ::= INTEGER (0..5 | 42^10..15)  -- note, UNION has lower precedence than INTERSECTION
@@ -196,5 +196,43 @@ func TestTypeConstraint(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func firstConstraintElements(ct ConstraintedType) Elements {
+	return ct.Constraint.ConstraintSpec.(SubtypeConstraint)[0].(Unions)[0][0].Elements
+}
+
+func asRestrictedString(elements Elements) RestrictedStringType {
+	return elements.(TypeConstraint).Type.(RestrictedStringType)
+}
+
+func TestTypeTypeConstraint(t *testing.T) {
+	content := `
+	KerberosV5Spec2 DEFINITIONS ::= BEGIN
+		KerberosString  ::= GeneralString (IA5String)
+	END
+	`
+	expectedType := ConstraintedType{
+		Type: RestrictedStringType{LexType: GeneralString},
+		Constraint: Constraint{
+			ConstraintSpec: SubtypeConstraint{Unions{Intersections{
+				{Elements: TypeConstraint{RestrictedStringType{LexType: IA5String}}},
+			}}},
+		},
+	}
+	r := testNotFails(t, content)
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("KerberosString")
+	if parsedAssignment == nil {
+		t.Fatal("Expected KerberosString in assignments")
+	}
+	parsedType := parsedAssignment.Type.(ConstraintedType)
+	if parsedType.Type.(RestrictedStringType) != expectedType.Type.(RestrictedStringType) {
+		t.Errorf("Expected %v got %v", expectedType.Type, parsedType.Type)
+	}
+	parsedElements := firstConstraintElements(parsedType)
+	expectedElements := firstConstraintElements(expectedType)
+	if asRestrictedString(parsedElements) != asRestrictedString(expectedElements) {
+		t.Errorf("Expected %v got %v", expectedElements, parsedElements)
 	}
 }

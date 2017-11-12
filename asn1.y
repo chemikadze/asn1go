@@ -227,8 +227,11 @@ import (
 %type <Elements> SingleValue
 %type <Elements> ValueRange
 %type <Elements> SubtypeElements
+%type <Elements> TypeConstraint
 %type <RangeEndpoint> LowerEndpoint UpperEndpoint
 %type <Value> LowerEndValue UpperEndValue
+%type <Type> CharacterStringType RestrictedCharacterStringType UnrestrictedCharacterStringType
+%type <Type> DefinedType ReferencedType
 
 
 //
@@ -369,6 +372,14 @@ Assignment : TypeAssignment
 //           | ParameterizedAssignment
 ;
 
+// 13.1
+
+DefinedType : // ExternalTypeReference
+            /*|*/ typereference  { $$ = $1 }
+//            | ParameterizedType
+//            | ParameterizedValueSetType
+;
+
 // 13.3
 
 DefinedValue : "t" "o" "d" "o"  { $$ = DefinedValue{} }
@@ -388,7 +399,7 @@ ValueAssignment : valuereference Type ASSIGNMENT Value  { $$ = ValueAssignment{$
 // 16.1
 
 Type : BuiltinType
-//     | ReferencedType
+     | ReferencedType
      | ConstrainedType
 ;
 
@@ -396,7 +407,7 @@ Type : BuiltinType
 
 BuiltinType : //BitStringType
             /*|*/ BooleanType
-//            | CharacterStringType
+            | CharacterStringType
 //            | ChoiceType
 //            | EmbeddedPDVType
 //            | EnumeratedType
@@ -414,6 +425,15 @@ BuiltinType : //BitStringType
 //            | SetType
 //            | SetOfType
 //            | TaggedType
+;
+
+// 16.3
+
+ReferencedType : DefinedType
+//               | UsefulType
+//               | SelectionType
+//               | TypeFromObject
+//               | ValueSetFromObjects
 ;
 
 // 16.7
@@ -549,6 +569,32 @@ NameAndNumberForm : identifier OPEN_ROUND NumberForm CLOSE_ROUND
 NameForm : identifier
 ;
 
+// 36.1
+
+CharacterStringType : RestrictedCharacterStringType
+                    | UnrestrictedCharacterStringType
+;
+
+RestrictedCharacterStringType    : BMPString  { $$ = RestrictedStringType{LexType: BMPString} }
+                                 | GeneralString  { $$ = RestrictedStringType{LexType: GeneralString} }
+                                 | GraphicString  { $$ = RestrictedStringType{LexType: GraphicString} }
+                                 | IA5String  { $$ = RestrictedStringType{LexType: IA5String} }
+                                 | ISO646String  { $$ = RestrictedStringType{LexType: ISO646String} }
+                                 | NumericString  { $$ = RestrictedStringType{LexType: NumericString} }
+                                 | PrintableString  { $$ = RestrictedStringType{LexType: PrintableString} }
+                                 | TeletexString  { $$ = RestrictedStringType{LexType: TeletexString} }
+                                 | T61String  { $$ = RestrictedStringType{LexType: T61String} }
+                                 | UniversalString  { $$ = RestrictedStringType{LexType: UniversalString} }
+                                 | UTF8String  { $$ = RestrictedStringType{LexType: UTF8String} }
+                                 | VideotexString  { $$ = RestrictedStringType{LexType: VideotexString} }
+                                 | VisibleString  { $$ = RestrictedStringType{LexType: VisibleString} }
+;
+
+// 40.1
+
+UnrestrictedCharacterStringType : CHARACTER STRING  { $$ = CharacterStringType{} }
+;
+
 // 45.1
 
 ConstrainedType : Type Constraint  { $$ = ConstraintedType{$1, $2} }
@@ -624,7 +670,7 @@ SubtypeElements : SingleValue
                 | ValueRange
 //                | PermittedAlphabet
 //                | SizeConstraint
-//                | TypeConstraint
+                | TypeConstraint
 //                | InnerTypeConstraints
 //                | PatternConstraint
 ;
@@ -653,6 +699,11 @@ LowerEndValue : Value
 
 UpperEndValue : Value
               | MAX  { $$ = nil }
+;
+
+// 47.6.1
+
+TypeConstraint : Type  { $$ = TypeConstraint{$1} }
 ;
 
 // 49.4

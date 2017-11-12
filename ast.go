@@ -121,6 +121,10 @@ func (r TypeReference) Name() string {
 	return string(r)
 }
 
+func (r TypeReference) Zero() interface{} {
+	return nil
+}
+
 // value reference
 type ValueReference string
 
@@ -179,6 +183,24 @@ func (BooleanType) Zero() interface{} {
 	return false
 }
 
+////////////////////////////////////////////////
+// String types
+
+type RestrictedStringType struct {
+	LexType int
+}
+
+func (RestrictedStringType) Zero() interface{} {
+	return ""
+}
+
+type CharacterStringType struct{}
+
+func (CharacterStringType) Zero() interface{} {
+	return ""
+}
+
+////////////////////////////////////////////////
 // type with constraints
 type ConstraintedType struct {
 	Type       Type
@@ -265,6 +287,12 @@ type RangeEndpoint struct {
 func (e RangeEndpoint) IsUnspecified() bool {
 	return e.Value == nil
 }
+
+type TypeConstraint struct {
+	Type Type
+}
+
+func (TypeConstraint) IsElements() {}
 
 // TODO
 type GeneralConstraint struct{}
