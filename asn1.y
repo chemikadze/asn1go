@@ -43,6 +43,13 @@ import (
     Elements Elements
     SubtypeConstraint SubtypeConstraint
     RangeEndpoint RangeEndpoint
+    NamedType NamedType
+    ComponentType ComponentType
+    ComponentTypeList ComponentTypeList
+    SequenceType SequenceType
+    Tag Tag
+    Class int
+    SequenceOfType SequenceOfType
 }
 
 %token WHITESPACE
@@ -193,6 +200,7 @@ import (
 %type <Type> BooleanType
 %type <Type> BuiltinType
 %type <Type> Type
+%type <NamedType> NamedType
 %type <ObjIdComponents> ObjIdComponents
 %type <ObjIdComponents> NumberForm
 %type <ObjIdComponents> NameAndNumberForm
@@ -202,6 +210,7 @@ import (
 %type <Value> Value
 %type <Value> IntegerValue
 %type <Number> SignedNumber
+%type <Number> number
 %type <Assignment> Assignment
 %type <Assignment> ValueAssignment
 %type <Assignment> TypeAssignment
@@ -232,7 +241,18 @@ import (
 %type <Value> LowerEndValue UpperEndValue
 %type <Type> CharacterStringType RestrictedCharacterStringType UnrestrictedCharacterStringType
 %type <Type> DefinedType ReferencedType
-
+%type <Type> SequenceType
+%type <Type> SequenceOfType
+%type <ComponentType> ComponentType
+%type <ComponentTypeList> ComponentTypeList
+%type <ComponentTypeList> RootComponentTypeList
+%type <ComponentTypeList> ComponentTypeLists
+%type <Type> TaggedType
+%type <Tag> Tag
+%type <Value> ClassNumber
+%type <Class> Class
+%type <Type> UsefulType
+%type <Type> OctetStringType
 
 //
 // end declarations
@@ -265,6 +285,9 @@ typereference: TYPEORMODULEREFERENCE  { $$ = TypeReference($1) }
 modulereference: TYPEORMODULEREFERENCE;
 
 valuereference: VALUEIDENTIFIER  {  $$ = ValueReference($1)  }
+;
+
+number : NUMBER
 ;
 
 identifier: VALUEIDENTIFIER;
@@ -417,23 +440,28 @@ BuiltinType : //BitStringType
 //            | NullType
 //            | ObjectClassFieldType
             | ObjectIdentifierType
-//            | OctetStringType
+            | OctetStringType
 //            | RealType
 //            | RelativeOIDType
-//            | SequenceType
-//            | SequenceOfType
+            | SequenceType
+            | SequenceOfType
 //            | SetType
 //            | SetOfType
-//            | TaggedType
+            | TaggedType
 ;
 
 // 16.3
 
 ReferencedType : DefinedType
-//               | UsefulType
+               | UsefulType
 //               | SelectionType
 //               | TypeFromObject
 //               | ValueSetFromObjects
+;
+
+// 16.5
+
+NamedType : identifier Type  { $$ = NamedType{Identifier: Identifier($1), Type: $2} }
 ;
 
 // 16.7
@@ -528,6 +556,93 @@ SignedExponent : NUMBER
                | MINUS NUMBER  { $$ = Number(-int($2)) }
 ;
 
+// 22.1
+
+OctetStringType : OCTET STRING  { $$ = OctetStringType{} }
+;
+
+// 24.1
+
+SequenceType : SEQUENCE OPEN_CURLY CLOSE_CURLY  { $$ = SequenceType{} }
+             | SEQUENCE OPEN_CURLY ExtensionAndException OptionalExtensionMarker CLOSE_CURLY  { $$ = SequenceType{} }
+             | SEQUENCE OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SequenceType{Components: $3} }
+;
+
+ExtensionAndException : ELLIPSIS
+                      | ELLIPSIS ExceptionSpec
+;
+
+OptionalExtensionMarker : COMMA ELLIPSIS | /*empty*/
+;
+
+// TODO Extensions are not supported
+ComponentTypeLists : RootComponentTypeList
+//                   | RootComponentTypeList "," ExtensionAndException ExtensionAdditions OptionalExtensionMarker
+//                   | RootComponentTypeList "," ExtensionAndException ExtensionAdditions ExtensionEndMarker "," RootComponentTypeList
+//                   | ExtensionAndException ExtensionAdditions ExtensionEndMarker "," RootComponentTypeList
+//                   | ExtensionAndException ExtensionAdditions OptionalExtensionMarker
+;
+
+RootComponentTypeList : ComponentTypeList
+;
+
+ExtensionEndMarker : COMMA ELLIPSIS
+;
+
+ExtensionAdditions : COMMA ExtensionAdditionList
+                   | /*empty*/
+;
+
+ExtensionAdditionList : ExtensionAddition
+                      | ExtensionAdditionList COMMA ExtensionAddition
+;
+
+ExtensionAddition : ComponentType
+                  | ExtensionAdditionGroup
+
+ExtensionAdditionGroup : LEFT_VERSION_BRACKETS VersionNumber ComponentTypeList RIGHT_VERSION_BRACKETS
+;
+
+VersionNumber : /*empty*/
+              | NUMBER COLON
+;
+
+ComponentTypeList : ComponentType  { $$ = append(make(ComponentTypeList, 0), $1) }
+                  | ComponentTypeList COMMA ComponentType  { $$ = append($1, $3) }
+;
+
+ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
+              | NamedType OPTIONAL  { $$ = NamedComponentType{NamedType: $1, IsOptional: true} }
+              | NamedType DEFAULT Value  { $$ = NamedComponentType{NamedType: $1, Default: &$3} }
+              | COMPONENTS OF Type  { $$ = ComponentsOfComponentType{Type: $3} }
+;
+
+// 30.1
+
+TaggedType : Tag Type  { $$ = TaggedType{Tag: $1, Type: $2} }
+           | Tag IMPLICIT Type  { $$ = TaggedType{Tag: $1, Type: $3, TagType: TAGS_IMPLICIT, HasTagType: true} }
+           | Tag EXPLICIT Type  { $$ = TaggedType{Tag: $1, Type: $3, TagType: TAGS_EXPLICIT, HasTagType: true} }
+;
+
+Tag : OPEN_SQUARE Class ClassNumber CLOSE_SQUARE  { $$ = Tag{Class: $2, ClassNumber: $3} }
+;
+
+ClassNumber : number  { $$ = $1 }
+            | DefinedValue  { $$ = $1 }
+;
+
+Class : UNIVERSAL  { $$ = CLASS_UNIVERSAL }
+      | APPLICATION  { $$ = CLASS_APPLICATION }
+      | PRIVATE    { $$ = CLASS_PRIVATE }
+      | /*empty*/  { $$ = CLASS_CONTEXT_SPECIFIC }
+;
+
+// 25.1
+
+SequenceOfType : SEQUENCE OF Type  { $$ = SequenceOfType{$3} }
+               | SEQUENCE OF NamedType  { $$ = SequenceOfType{$3} }
+;
+
 // 31.1
 
 ObjectIdentifierType : OBJECT IDENTIFIER  { $$ = ObjectIdentifierType{} }
@@ -593,6 +708,11 @@ RestrictedCharacterStringType    : BMPString  { $$ = RestrictedStringType{LexTyp
 // 40.1
 
 UnrestrictedCharacterStringType : CHARACTER STRING  { $$ = CharacterStringType{} }
+;
+
+// 41.1
+
+UsefulType : GeneralizedTime  { $$ = TypeReference("GeneralizedTime") }
 ;
 
 // 45.1

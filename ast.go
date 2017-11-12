@@ -28,6 +28,7 @@ const (
 	TAGS_EXPLICIT = iota
 	TAGS_IMPLICIT
 	TAGS_AUTOMATIC
+	TAGS_UNSPECIFIED
 )
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,6 +106,15 @@ type TypeAssignment struct {
 
 func (v TypeAssignment) Reference() Reference {
 	return v.TypeReference
+}
+
+type NamedType struct {
+	Identifier Identifier
+	Type       Type
+}
+
+func (t NamedType) Zero() interface{} {
+	return t.Type.Zero()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,6 +208,78 @@ type CharacterStringType struct{}
 
 func (CharacterStringType) Zero() interface{} {
 	return ""
+}
+
+type OctetStringType struct{}
+
+func (OctetStringType) Zero() interface{} {
+	return make([]byte, 0)
+}
+
+////////////////////////////////////////////////
+// sequence type
+
+// TODO Extensions are not supported
+type SequenceType struct {
+	Components ComponentTypeList
+}
+
+func (SequenceType) Zero() interface{} {
+	return nil
+}
+
+type ComponentTypeList []ComponentType
+
+type ComponentType interface {
+	IsComponentType()
+}
+
+// "regular" named element of SEQUENCE
+type NamedComponentType struct {
+	NamedType  NamedType
+	IsOptional bool
+	Default    *Value
+}
+
+func (NamedComponentType) IsComponentType() {}
+
+// reference to other SEQUENCE type to be expanded
+type ComponentsOfComponentType struct {
+	Type Type
+}
+
+func (ComponentsOfComponentType) IsComponentType() {}
+
+// tagged types
+type TaggedType struct {
+	Tag        Tag
+	Type       Type
+	TagType    int  // one of TAGS_*
+	HasTagType bool // true if explicitly set
+}
+
+func (t TaggedType) Zero() interface{} {
+	return t.Type.Zero()
+}
+
+type Tag struct {
+	Class       int
+	ClassNumber Value // either DefinedValue or Number
+}
+
+const (
+	CLASS_CONTEXT_SPECIFIC = iota // when not specified
+	CLASS_UNIVERSAL
+	CLASS_APPLICATION
+	CLASS_PRIVATE
+)
+
+type SequenceOfType struct {
+	Type Type
+}
+
+func (SequenceOfType) Zero() interface{} {
+	return make([]interface{}, 0)
 }
 
 ////////////////////////////////////////////////

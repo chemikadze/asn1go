@@ -28,7 +28,7 @@ Microseconds    ::= INTEGER (0..999999)
 KerberosString  ::= GeneralString (IA5String)
 
 Realm           ::= KerberosString
-/*TODO
+
 PrincipalName   ::= SEQUENCE {
         name-type       [0] Int32,
         name-string     [1] SEQUENCE OF KerberosString
@@ -60,7 +60,7 @@ PA-DATA         ::= SEQUENCE {
         padata-type     [1] Int32,
         padata-value    [2] OCTET STRING -- might be encoded AP-REQ
 }
-
+/*TODO
 KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
                     -- minimum number of bits shall be sent,
                     -- but no fewer than 32

@@ -1,6 +1,7 @@
 package asn1go
 
 import (
+	"fmt"
 	"io/ioutil"
 	"reflect"
 	"testing"
@@ -234,5 +235,46 @@ func TestTypeTypeConstraint(t *testing.T) {
 	expectedElements := firstConstraintElements(expectedType)
 	if asRestrictedString(parsedElements) != asRestrictedString(expectedElements) {
 		t.Errorf("Expected %v got %v", expectedElements, parsedElements)
+	}
+}
+
+func TestSequenceWithTagsAndSequenceOf(t *testing.T) {
+	content := `
+	KerberosV5Spec2 DEFINITIONS ::= BEGIN
+		PrincipalName   ::= SEQUENCE {
+				name-type       [0] Int32,
+				name-string     [1] SEQUENCE OF KerberosString
+		}
+	END
+	`
+	expectedType := SequenceType{Components: ComponentTypeList{
+		NamedComponentType{NamedType: NamedType{
+			Identifier: Identifier("name-type"),
+			Type:       TaggedType{Tag: Tag{ClassNumber: Number(0)}, Type: TypeReference("Int32")},
+		}},
+		NamedComponentType{NamedType: NamedType{
+			Identifier: Identifier("name-string"),
+			Type:       TaggedType{Tag: Tag{ClassNumber: Number(1)}, Type: SequenceOfType{TypeReference("KerberosString")}},
+		}},
+	}}
+	r := testNotFails(t, content)
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("PrincipalName")
+	if parsedAssignment == nil {
+		t.Fatal("Expected PrincipalName in assignments")
+	}
+	parsedType := parsedAssignment.Type.(SequenceType)
+	if len(parsedType.Components) != len(expectedType.Components) {
+		t.Fatalf("Expected %v components got %v", len(expectedType.Components), len(parsedType.Components))
+	}
+	for i := range parsedType.Components {
+		expectedComponent := expectedType.Components[i].(NamedComponentType)
+		parsedComponent := parsedType.Components[i].(NamedComponentType)
+		if ei, pi := expectedComponent.NamedType.Identifier, parsedComponent.NamedType.Identifier; ei != pi {
+			t.Errorf("Expected identifier %v got %v", ei, pi)
+		}
+	}
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", expectedType), fmt.Sprintf("%+v", parsedType); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
 	}
 }
