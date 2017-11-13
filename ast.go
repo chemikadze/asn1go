@@ -282,6 +282,20 @@ func (SequenceOfType) Zero() interface{} {
 	return make([]interface{}, 0)
 }
 
+// BIT STRING with optional named bits
+type BitStringType struct {
+	NamedBits []NamedBit
+}
+
+func (BitStringType) Zero() interface{} {
+	return make([]bool, 0)
+}
+
+type NamedBit struct {
+	Name  Identifier
+	Index Value // Number or DefinedValue
+}
+
 ////////////////////////////////////////////////
 // type with constraints
 type ConstraintedType struct {

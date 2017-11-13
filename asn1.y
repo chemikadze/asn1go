@@ -50,6 +50,8 @@ import (
     Tag Tag
     Class int
     SequenceOfType SequenceOfType
+    NamedBitList []NamedBit
+    NamedBit NamedBit
 }
 
 %token WHITESPACE
@@ -253,6 +255,9 @@ import (
 %type <Class> Class
 %type <Type> UsefulType
 %type <Type> OctetStringType
+%type <Type> BitStringType
+%type <NamedBitList> NamedBitList
+%type <NamedBit> NamedBit
 
 //
 // end declarations
@@ -428,8 +433,8 @@ Type : BuiltinType
 
 // 16.2
 
-BuiltinType : //BitStringType
-            /*|*/ BooleanType
+BuiltinType : BitStringType
+            | BooleanType
             | CharacterStringType
 //            | ChoiceType
 //            | EmbeddedPDVType
@@ -554,6 +559,20 @@ ExponentSymbol : "e" | "E"
 
 SignedExponent : NUMBER
                | MINUS NUMBER  { $$ = Number(-int($2)) }
+;
+
+// 21.1
+
+BitStringType : BIT STRING  { $$ = BitStringType{} }
+              | BIT STRING OPEN_CURLY NamedBitList CLOSE_CURLY  { $$ = BitStringType{NamedBits: $4} }
+;
+
+NamedBitList : NamedBit  { $$ = append(make([]NamedBit, 0), $1) }
+             | NamedBitList "," NamedBit  { $$ = append($1, $3) }
+;
+
+NamedBit : identifier OPEN_ROUND number CLOSE_ROUND  { $$ = NamedBit{Name: Identifier($1), Index: $3} }
+         | identifier OPEN_ROUND DefinedValue CLOSE_ROUND  { $$ = NamedBit{Name: Identifier($1), Index: $3} }
 ;
 
 // 22.1
