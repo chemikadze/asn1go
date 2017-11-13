@@ -390,6 +390,12 @@ type TypeConstraint struct {
 
 func (TypeConstraint) IsElements() {}
 
+type SizeConstraint struct {
+	Constraint Constraint
+}
+
+func (SizeConstraint) IsElements() {}
+
 // TODO
 type GeneralConstraint struct{}
 

@@ -60,7 +60,7 @@ PA-DATA         ::= SEQUENCE {
         padata-type     [1] Int32,
         padata-value    [2] OCTET STRING -- might be encoded AP-REQ
 }
-/*TODO
+
 KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
                     -- minimum number of bits shall be sent,
                     -- but no fewer than 32
@@ -126,8 +126,10 @@ TicketFlags     ::= KerberosFlags
         -- transited-policy-checked(12),
         -- ok-as-delegate(13)
 
+-- TODO reflect in AST
 AS-REQ          ::= [APPLICATION 10] KDC-REQ
 
+-- TODO reflect in AST
 TGS-REQ         ::= [APPLICATION 12] KDC-REQ
 
 KDC-REQ         ::= SEQUENCE {
@@ -344,7 +346,7 @@ KRB-ERROR       ::= [APPLICATION 30] SEQUENCE {
 }
 
 METHOD-DATA     ::= SEQUENCE OF PA-DATA
-
+/*TODO
 TYPED-DATA      ::= SEQUENCE SIZE (1..MAX) OF SEQUENCE {
         data-type       [0] Int32,
         data-value      [1] OCTET STRING OPTIONAL

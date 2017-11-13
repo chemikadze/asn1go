@@ -278,3 +278,35 @@ func TestSequenceWithTagsAndSequenceOf(t *testing.T) {
 		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
 	}
 }
+
+func TestBitStringWithSizeConstraint(t *testing.T) {
+	content := `
+	KerberosV5Spec2 DEFINITIONS ::= BEGIN
+		KerberosFlags   ::= BIT STRING (SIZE (32..MAX))
+	END
+	`
+	expectedType := ConstraintedType{
+		Type: BitStringType{},
+		Constraint: Constraint{ConstraintSpec: SubtypeConstraint{
+			Unions{Intersections{IntersectionElements{Elements: SizeConstraint{Constraint: Constraint{ConstraintSpec: SubtypeConstraint{
+				Unions{Intersections{IntersectionElements{Elements: ValueRange{
+					LowerEndpoint: RangeEndpoint{Value: Number(32)},
+					UpperEndpoint: RangeEndpoint{},
+				},
+				}}},
+			}},
+			},
+			}}},
+		}},
+	}
+	r := testNotFails(t, content)
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("KerberosFlags")
+	if parsedAssignment == nil {
+		t.Fatal("Expected KerberosFlags in assignments")
+	}
+	parsedType := parsedAssignment.Type
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", expectedType), fmt.Sprintf("%+v", parsedType); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}

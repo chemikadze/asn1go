@@ -239,6 +239,7 @@ import (
 %type <Elements> ValueRange
 %type <Elements> SubtypeElements
 %type <Elements> TypeConstraint
+%type <Elements> SizeConstraint
 %type <RangeEndpoint> LowerEndpoint UpperEndpoint
 %type <Value> LowerEndValue UpperEndValue
 %type <Type> CharacterStringType RestrictedCharacterStringType UnrestrictedCharacterStringType
@@ -808,7 +809,7 @@ SubtypeElements : SingleValue
 //                | ContainedSubtype
                 | ValueRange
 //                | PermittedAlphabet
-//                | SizeConstraint
+                | SizeConstraint
                 | TypeConstraint
 //                | InnerTypeConstraints
 //                | PatternConstraint
@@ -838,6 +839,11 @@ LowerEndValue : Value
 
 UpperEndValue : Value
               | MAX  { $$ = nil }
+;
+
+// 47.5
+
+SizeConstraint : SIZE Constraint  { $$ = SizeConstraint{$2} }
 ;
 
 // 47.6.1
