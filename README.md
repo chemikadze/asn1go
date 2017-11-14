@@ -27,8 +27,10 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [ ] XML
 2) Parser
  - [x] minimal module definition BNF
- - [ ] complete BNF to consume Kerberos module
- - [ ] yield AST from parser 
+ - [x] complete BNF to consume Kerberos module
+ - [x] yield AST from parser
+ - [ ] parse SNMPv1 (rfc1157), SNMPv2 (rfc3411–3418)
+ - [ ] parse LDAP (rfc4511)
 3) Code Generator
  - [ ] declaration generator
  - [ ] crypto/asn1 compatible generation mode
