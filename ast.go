@@ -317,6 +317,12 @@ type ConstraintSpec interface {
 	IsConstraintSpec()
 }
 
+func SingleElementConstraint(elem Elements) Constraint {
+	return Constraint{ConstraintSpec: SubtypeConstraint{
+		Unions{Intersections{IntersectionElements{Elements: elem}}},
+	}}
+}
+
 // SubtypeConstraint describes list of element sets that can be used in constainted type
 type SubtypeConstraint []ElementSetSpec
 

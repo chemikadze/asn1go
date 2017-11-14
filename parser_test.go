@@ -310,3 +310,30 @@ func TestBitStringWithSizeConstraint(t *testing.T) {
 		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
 	}
 }
+
+func TestConstrainedSequence(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		CONSTRAINED-SEQUENCE ::= SEQUENCE SIZE (1..MAX) OF INTEGER
+	END
+	`
+	expectedType := ConstraintedType{
+		Type: SequenceOfType{IntegerType{}},
+		Constraint: SingleElementConstraint(SizeConstraint{
+			Constraint: SingleElementConstraint(ValueRange{
+				LowerEndpoint: RangeEndpoint{Value: Number(1)},
+				UpperEndpoint: RangeEndpoint{},
+			}),
+		}),
+	}
+	r := testNotFails(t, content)
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("CONSTRAINED-SEQUENCE")
+	if parsedAssignment == nil {
+		t.Fatal("Expected CONSTRAINED-SEQUENCE in assignments")
+	}
+	parsedType := parsedAssignment.Type
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", expectedType), fmt.Sprintf("%+v", parsedType); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}

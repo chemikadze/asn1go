@@ -220,6 +220,7 @@ import (
 %type <ModuleBody> ModuleBody
 %type <ValueReference> valuereference
 %type <Type> ConstrainedType
+%type <Type> TypeWithConstraint
 %type <Constraint> Constraint
 %type <ConstraintSpec> ConstraintSpec
 %type <SubtypeConstraint> SubtypeConstraint
@@ -738,7 +739,19 @@ UsefulType : GeneralizedTime  { $$ = TypeReference("GeneralizedTime") }
 // 45.1
 
 ConstrainedType : Type Constraint  { $$ = ConstraintedType{$1, $2} }
-//                | TypeWithConstraint
+                | TypeWithConstraint
+;
+
+// 45.5
+
+TypeWithConstraint : //SET Constraint OF Type
+                   //| SET SizeConstraint OF Type
+                   /*|*/ SEQUENCE Constraint OF Type  { $$ = ConstraintedType{SequenceOfType{$4}, $2} }
+                   | SEQUENCE SizeConstraint OF Type  { $$ = ConstraintedType{SequenceOfType{$4}, SingleElementConstraint($2)} }
+                   //| SET Constraint OF NamedType
+                   //| SET SizeConstraint OF NamedType
+                   | SEQUENCE Constraint OF NamedType  { $$ = ConstraintedType{SequenceOfType{$4}, $2} }
+                   | SEQUENCE SizeConstraint OF NamedType  { $$ = ConstraintedType{SequenceOfType{$4}, SingleElementConstraint($2)} }
 ;
 
 // 45.6

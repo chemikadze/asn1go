@@ -346,7 +346,7 @@ KRB-ERROR       ::= [APPLICATION 30] SEQUENCE {
 }
 
 METHOD-DATA     ::= SEQUENCE OF PA-DATA
-/*TODO
+
 TYPED-DATA      ::= SEQUENCE SIZE (1..MAX) OF SEQUENCE {
         data-type       [0] Int32,
         data-value      [1] OCTET STRING OPTIONAL
@@ -391,5 +391,5 @@ AD-AND-OR               ::= SEQUENCE {
 }
 
 AD-MANDATORY-FOR-KDC    ::= AuthorizationData
-ENDTODO*/
+
 END
