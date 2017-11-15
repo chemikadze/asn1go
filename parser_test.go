@@ -29,6 +29,47 @@ func TestParseMinimalModule(t *testing.T) {
 	}
 }
 
+func TestParseKerberos(t *testing.T) {
+	content, err := ioutil.ReadFile("examples/rfc4120.asn1")
+	if err != nil {
+		t.Errorf("Failed to read file: %s", err.Error())
+	}
+	testNotFails(t, string(content))
+}
+
+func TestParseSNMP(t *testing.T) {
+	content, err := ioutil.ReadFile("examples/rfc1157.asn1")
+	if err != nil {
+		t.Errorf("Failed to read file: %s", err.Error())
+	}
+	testNotFails(t, string(content))
+}
+
+func TestParseImports(t *testing.T) {
+	content := `
+	RFC1157-SNMP DEFINITIONS ::= BEGIN
+		IMPORTS
+			ObjectName, ObjectSyntax, NetworkAddress, IpAddress, TimeTicks
+		  		FROM RFC1155-SMI;
+
+		MyString ::= CHARACTER STRING  -- AssignmentList can't be empty (?)
+	END
+	`
+	expected := []SymbolsFromModule{
+		{
+			Module: GlobalModuleReference{Reference: "RFC1155-SMI"},
+			SymbolList: []Symbol{
+				TypeReference("ObjectName"), TypeReference("ObjectSyntax"), TypeReference("NetworkAddress"),
+				TypeReference("IpAddress"), TypeReference("TimeTicks"),
+			},
+		},
+	}
+	r := testNotFails(t, content)
+	if es, rs := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", r.ModuleBody.Imports); es != rs {
+		t.Errorf("Imports did not match:\n exp: %v\n got: %v", es, rs)
+	}
+}
+
 func TestDefinitiveIdentifier(t *testing.T) {
 	content := `
 	KerberosV5Spec2 {
@@ -113,14 +154,6 @@ func TestValueAssignmentOID(t *testing.T) {
 		t.Errorf("Expected ObjectIdentifierValue, got %t", v)
 	}
 	// TODO test DefinedValue
-}
-
-func TestParseKerberos(t *testing.T) {
-	content, err := ioutil.ReadFile("examples/rfc4120.asn1")
-	if err != nil {
-		t.Errorf("Failed to read file: %s", err.Error())
-	}
-	testNotFails(t, string(content))
 }
 
 func testReal(t *testing.T, input Real, expectedValue Real) {

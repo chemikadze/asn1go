@@ -52,6 +52,11 @@ import (
     SequenceOfType SequenceOfType
     NamedBitList []NamedBit
     NamedBit NamedBit
+    Imports []SymbolsFromModule
+    SymbolsFromModule SymbolsFromModule
+    SymbolList []Symbol
+    Symbol Symbol
+    GlobalModuleReference GlobalModuleReference
 }
 
 %token WHITESPACE
@@ -260,6 +265,15 @@ import (
 %type <Type> BitStringType
 %type <NamedBitList> NamedBitList
 %type <NamedBit> NamedBit
+%type <Imports> Imports
+%type <Imports> SymbolsImported
+%type <Imports> SymbolsFromModuleList
+%type <SymbolsFromModule> SymbolsFromModule
+%type <SymbolList> SymbolList
+%type <Symbol> Symbol
+%type <Symbol> Reference  // quite questionable
+%type <Value> AssignedIdentifier
+%type <GlobalModuleReference> GlobalModuleReference
 
 //
 // end declarations
@@ -335,7 +349,7 @@ ExtensionDefault : EXTENSIBILITY IMPLIED { $$ = true }
                  | /*empty*/             { $$ = false }
 ;
 
-ModuleBody : Exports Imports AssignmentList  { $$ = ModuleBody{AssignmentList: $3} }
+ModuleBody : Exports Imports AssignmentList  { $$ = ModuleBody{Imports: $2, AssignmentList: $3} }
            | /*empty*/  { $$ = ModuleBody{} }
 ;
 
@@ -349,40 +363,40 @@ SymbolsExported : SymbolList
                 | /*empty*/
 ;
 
-Imports : IMPORTS SymbolsImported SEMICOLON
-        | /*empty*/
+Imports : IMPORTS SymbolsImported SEMICOLON  { $$ = $2 }
+        | /*empty*/  { $$ = make([]SymbolsFromModule, 0) }
 ;
 
-SymbolsImported : SymbolsFromModuleList
-                | /*empty*/
+SymbolsImported : SymbolsFromModuleList  { $$ = $1 }
+                | /*empty*/  { $$ = make([]SymbolsFromModule, 0) }
 ;
 
-SymbolsFromModuleList : SymbolsFromModule
-                      | SymbolsFromModuleList SymbolsFromModule
+SymbolsFromModuleList : SymbolsFromModule  { $$ = append(make([]SymbolsFromModule, 0), $1) }
+                      | SymbolsFromModuleList SymbolsFromModule  { $$ = append($1, $2) }
 ;
 
-SymbolsFromModule : SymbolList FROM GlobalModuleReference
+SymbolsFromModule : SymbolList FROM GlobalModuleReference  { $$ = SymbolsFromModule{$1, $3} }
 ;
 
-GlobalModuleReference : modulereference AssignedIdentifier
+GlobalModuleReference : modulereference AssignedIdentifier  { $$ = GlobalModuleReference{$1, $2} }
 ;
 
-AssignedIdentifier : "t" "o" "d" "o"
-//                     ObjectIdentifierValue
-//                   | DefinedValue
-//                   | /*empty*/
+AssignedIdentifier : ObjectIdentifierValue  { $$ = $1 }
+                   | DefinedValue  { $$ = $1 }
+                   | /*empty*/  { $$ = nil }
 ;
 
-SymbolList : Symbol
-           | SymbolList COMMA Symbol
+SymbolList : Symbol  { $$ = append(make([]Symbol, 0), $1) }
+           | SymbolList COMMA Symbol  { $$ = append($1, $3) }
 ;
 
 Symbol : Reference
 //       | ParameterizedReference
 ;
 
-Reference : modulereference // modulereference
-          | valuereference       // valuereference
+Reference : typereference  { $$ = TypeReference($1) }
+          | modulereference  { $$ = ModuleReference($1) }
+          | valuereference   { $$ = ValueReference($1) }
 //          | objectclassreference
 //          | objectreference
 //          | objectsetreference

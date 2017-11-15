@@ -36,6 +36,21 @@ const (
 
 type ModuleBody struct {
 	AssignmentList AssignmentList
+	Imports        []SymbolsFromModule
+}
+
+type SymbolsFromModule struct {
+	SymbolList []Symbol
+	Module     GlobalModuleReference
+}
+
+type Symbol interface {
+	IsSymbol()
+}
+
+type GlobalModuleReference struct {
+	Reference          string
+	AssignedIdentifier Value
 }
 
 type AssignmentList []Assignment
@@ -135,12 +150,21 @@ func (r TypeReference) Zero() interface{} {
 	return nil
 }
 
+func (TypeReference) IsSymbol() {}
+
 // value reference
 type ValueReference string
 
 func (r ValueReference) Name() string {
 	return string(r)
 }
+
+func (ValueReference) IsSymbol() {}
+
+// module reference
+type ModuleReference string
+
+func (ModuleReference) IsSymbol() {}
 
 // identifier type
 type Identifier string
