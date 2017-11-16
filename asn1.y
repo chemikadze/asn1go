@@ -209,6 +209,7 @@ import (
 %type <Type> BooleanType
 %type <Type> BuiltinType
 %type <Type> Type
+%type <Type> NullType
 %type <NamedType> NamedType
 %type <ObjIdComponents> ObjIdComponents
 %type <ObjIdComponents> NumberForm
@@ -465,7 +466,7 @@ BuiltinType : BitStringType
 //            | ExternalType
 //            | InstanceOfType
             | IntegerType
-//            | NullType
+            | NullType
 //            | ObjectClassFieldType
             | ObjectIdentifierType
             | OctetStringType
@@ -601,6 +602,11 @@ NamedBit : identifier OPEN_ROUND number CLOSE_ROUND  { $$ = NamedBit{Name: Ident
 // 22.1
 
 OctetStringType : OCTET STRING  { $$ = OctetStringType{} }
+;
+
+// 23.1
+
+NullType : NULL  { $$ = NullType{} }
 ;
 
 // 24.1

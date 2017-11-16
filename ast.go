@@ -193,6 +193,12 @@ type Type interface {
 	Zero() interface{}
 }
 
+type NullType struct{}
+
+func (NullType) Zero() interface{} {
+	return nil
+}
+
 // object identifier
 type ObjectIdentifierType struct{}
 

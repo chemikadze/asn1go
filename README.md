@@ -29,7 +29,7 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [x] minimal module definition BNF
  - [x] complete BNF to consume Kerberos module
  - [x] yield AST from parser
- - [x] parse SNMPv1 (rfc1157)
+ - [x] parse SNMPv1 (rfc1157, rfc1155)
  - [ ] SNMPv2 (rfc3411–3418)
  - [ ] parse LDAP (rfc4511)
 3) Code Generator

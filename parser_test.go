@@ -45,6 +45,14 @@ func TestParseSNMP(t *testing.T) {
 	testNotFails(t, string(content))
 }
 
+func TestParseSNMPSMI(t *testing.T) {
+	content, err := ioutil.ReadFile("examples/rfc1155.asn1")
+	if err != nil {
+		t.Errorf("Failed to read file: %s", err.Error())
+	}
+	testNotFails(t, string(content))
+}
+
 func TestParseImports(t *testing.T) {
 	content := `
 	RFC1157-SNMP DEFINITIONS ::= BEGIN
