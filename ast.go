@@ -216,6 +216,15 @@ func (BooleanType) Zero() interface{} {
 	return false
 }
 
+type ChoiceType struct {
+	AlternativeTypeList []NamedType
+	// TODO ExtensionAndException
+}
+
+func (ChoiceType) Zero() interface{} {
+	return nil
+}
+
 ////////////////////////////////////////////////
 // String types
 

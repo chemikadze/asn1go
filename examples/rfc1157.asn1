@@ -21,7 +21,6 @@ Message ::=
               ANY          -- authentication is being used
       }
 
-/* TODO
 -- protocol data units
 
 PDUs ::=
@@ -108,10 +107,8 @@ Trap-PDU ::=
                          -- enterpriseSpecific
 
           time-stamp     -- time elapsed between the last
-              TimeTicks, -- (re)initialization of the
-                            network
-                         -- entity and the generation of the
-                            trap
+              TimeTicks, -- (re)initialization of the network
+                         -- entity and the generation of the trap
 
            variable-bindings -- "interesting" information
               VarBindList
@@ -132,5 +129,5 @@ VarBind ::=
 VarBindList ::=
       SEQUENCE OF
          VarBind
-*/
+
 END

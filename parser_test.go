@@ -10,7 +10,7 @@ import (
 func testNotFails(t *testing.T, str string) *ModuleDefinition {
 	def, err := ParseString(str)
 	if err != nil {
-		t.Errorf("Failed to parse %v\n\nExpected nil error, got %v", str, err.Error())
+		t.Fatalf("Failed to parse %v\n\nExpected nil error, got %v", str, err.Error())
 	}
 	return def
 }
@@ -363,6 +363,47 @@ func TestConstrainedSequence(t *testing.T) {
 	parsedAssignment := r.ModuleBody.AssignmentList.GetType("CONSTRAINED-SEQUENCE")
 	if parsedAssignment == nil {
 		t.Fatal("Expected CONSTRAINED-SEQUENCE in assignments")
+	}
+	parsedType := parsedAssignment.Type
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", expectedType), fmt.Sprintf("%+v", parsedType); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}
+
+func TestChoiceType(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		PDUs ::=
+			  CHOICE {
+						  get-request
+							  GetRequest-PDU,
+
+						  get-next-request
+							  GetNextRequest-PDU,
+
+						  get-response
+							  GetResponse-PDU,
+
+						  set-request
+							  SetRequest-PDU,
+
+						  trap
+							  Trap-PDU
+					  }
+	END
+	`
+	expectedType := ChoiceType{[]NamedType{
+		{Identifier("get-request"), TypeReference("GetRequest-PDU")},
+		{Identifier("get-next-request"), TypeReference("GetNextRequest-PDU")},
+		{Identifier("get-response"), TypeReference("GetResponse-PDU")},
+		{Identifier("set-request"), TypeReference("SetRequest-PDU")},
+		{Identifier("trap"), TypeReference("Trap-PDU")},
+	}}
+	r := testNotFails(t, content)
+	parsedAssignment := r.ModuleBody.AssignmentList.GetType("PDUs")
+	if parsedAssignment == nil {
+		t.Fatal("Expected PDUs in assignments")
 	}
 	parsedType := parsedAssignment.Type
 	// quick and dirty

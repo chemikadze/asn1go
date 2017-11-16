@@ -57,6 +57,8 @@ import (
     SymbolList []Symbol
     Symbol Symbol
     GlobalModuleReference GlobalModuleReference
+    AlternativeTypeList []NamedType
+    ChoiceType ChoiceType
 }
 
 %token WHITESPACE
@@ -274,6 +276,11 @@ import (
 %type <Symbol> Reference  // quite questionable
 %type <Value> AssignedIdentifier
 %type <GlobalModuleReference> GlobalModuleReference
+%type <Type> ChoiceType
+%type <ChoiceType> AlternativeTypeLists
+%type <AlternativeTypeList> AlternativeTypeList RootAlternativeTypeList
+%type <NamedType> NamedType
+
 
 //
 // end declarations
@@ -452,7 +459,7 @@ Type : BuiltinType
 BuiltinType : BitStringType
             | BooleanType
             | CharacterStringType
-//            | ChoiceType
+            | ChoiceType
 //            | EmbeddedPDVType
 //            | EnumeratedType
 //            | ExternalType
@@ -650,6 +657,40 @@ ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
               | NamedType OPTIONAL  { $$ = NamedComponentType{NamedType: $1, IsOptional: true} }
               | NamedType DEFAULT Value  { $$ = NamedComponentType{NamedType: $1, Default: &$3} }
               | COMPONENTS OF Type  { $$ = ComponentsOfComponentType{Type: $3} }
+;
+
+// 28.1
+
+
+ChoiceType : CHOICE OPEN_CURLY AlternativeTypeLists CLOSE_CURLY  { $$ = $3 }
+;
+
+// TODO no extensions
+AlternativeTypeLists : RootAlternativeTypeList  { $$ = ChoiceType{$1} }
+                     | RootAlternativeTypeList COMMA ExtensionAndException ExtensionAdditionAlternatives OptionalExtensionMarker
+                         { $$ = ChoiceType{$1} }
+;
+
+RootAlternativeTypeList : AlternativeTypeList
+;
+
+ExtensionAdditionAlternatives : COMMA ExtensionAdditionAlternativesList
+                              | /*empty*/
+;
+
+ExtensionAdditionAlternativesList : ExtensionAdditionAlternative
+                                  | ExtensionAdditionAlternativesList COMMA ExtensionAdditionAlternative
+;
+
+ExtensionAdditionAlternative : ExtensionAdditionAlternativesGroup
+                             | NamedType
+;
+
+ExtensionAdditionAlternativesGroup : LEFT_VERSION_BRACKETS VersionNumber AlternativeTypeList RIGHT_VERSION_BRACKETS
+;
+
+AlternativeTypeList : NamedType  { $$ = append(make([]NamedType, 0), $1) }
+                    | AlternativeTypeList COMMA NamedType  { $$ = append($1, $3) }
 ;
 
 // 30.1
