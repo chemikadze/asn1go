@@ -326,3 +326,52 @@ func TestRangeSynax(t *testing.T) {
 		t.Fatalf("Expected lexem CLOSE_ROUND (%v) got %v", CLOSE_ROUND, l)
 	}
 }
+
+type lexemListTest struct {
+	input  string
+	lexems []int
+}
+
+var realSyntaxTests = []lexemListTest{
+	{"-1.2e5", []int{
+		MINUS,
+		NUMBER,
+		DOT,
+		NUMBER,
+		EXPONENT,
+		NUMBER,
+		0,
+	}},
+	{"-1.2 e5", []int{
+		MINUS,
+		NUMBER,
+		DOT,
+		NUMBER,
+		VALUEIDENTIFIER,
+		0,
+	}},
+}
+
+func TestRealSyntax(t *testing.T) {
+	for _, test := range realSyntaxTests {
+		lexer := lexForString(test.input)
+		sym := &yySymType{}
+		for _, expectedLexem := range test.lexems {
+			if l := lexer.Lex(sym); l != expectedLexem {
+				if lexer.err != nil {
+					t.Fatalf("Input: %v\nErr should be nil, got: %v", test.input, lexer.err.Error())
+				}
+				t.Errorf("Input: %v\nExpected lexem %v got %v", test.input, tokName(expectedLexem), tokName(l))
+			}
+		}
+	}
+
+}
+
+func tokName(tok int) string {
+	if tok >= yyPrivate {
+		return yyToknames[tok-yyPrivate+1]
+	} else {
+		return yyTokname(tok)
+	}
+}

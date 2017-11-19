@@ -16,14 +16,15 @@ var (
 )
 
 type MyLexer struct {
-	bufReader *bufio.Reader
-	err       error
-	result    *ModuleDefinition
-
-	runeStack []rune
+	bufReader     *bufio.Reader
+	err           error
+	result        *ModuleDefinition
+	lastWasNumber bool
 }
 
 func (lex *MyLexer) Lex(lval *yySymType) int {
+	lastWasNumber := lex.lastWasNumber
+	lex.lastWasNumber = false
 	for {
 		r, _, err := lex.readRune()
 		if err == io.EOF {
@@ -36,17 +37,23 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 
 		// fast forward cases
 		if isWhitespace(r) {
+			lastWasNumber = false
 			continue
 		} else if r == '-' && lex.peekRune() == '-' {
 			lex.skipLineComment()
+			lastWasNumber = false
 			continue
 		} else if r == '/' && lex.peekRune() == '*' {
 			lex.skipBlockComment()
+			lastWasNumber = false
 			continue
 		}
 
 		// parse lexem
 		if unicode.IsLetter(r) {
+			if lastWasNumber && (r == 'e' || r == 'E') {
+				return EXPONENT
+			}
 			lex.unreadRune()
 			content, err := lex.consumeWord()
 			if err != nil {
@@ -67,6 +74,7 @@ func (lex *MyLexer) Lex(lval *yySymType) int {
 			}
 		} else if unicode.IsDigit(r) {
 			lex.unreadRune()
+			lex.lastWasNumber = true
 			return lex.consumeNumber(lval)
 		} else if r == ':' && lex.peekRunes(2) == ":=" {
 			lex.discard(2)

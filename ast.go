@@ -186,6 +186,20 @@ func (x Number) UnaryMinus() Number {
 // real lexem
 type Real float64
 
+func (x Real) Type() Type {
+	return RealType{}
+}
+
+func (x Real) UnaryMinus() Real {
+	return Real(-float64(x))
+}
+
+type Boolean bool
+
+func (Boolean) Type() Type {
+	return BooleanType{}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // types
 
@@ -213,6 +227,13 @@ type IntegerType struct {
 
 func (IntegerType) Zero() interface{} {
 	return 0
+}
+
+// real
+type RealType struct{}
+
+func (RealType) Zero() interface{} {
+	return 0.0
 }
 
 // boolean

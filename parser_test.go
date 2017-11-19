@@ -419,3 +419,47 @@ func TestChoiceType(t *testing.T) {
 		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
 	}
 }
+
+func TestRealValues(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		plusNum INTEGER ::= 123
+		minusNum INTEGER ::= -123
+		plusReal REAL ::= 123.4
+		minusReal REAL ::= -1.234
+		plusExp REAL ::= 1.234e3
+		minusExp REAL ::= 1234e-3
+	END
+	`
+	expectedDecls := AssignmentList{
+		ValueAssignment{ValueReference("plusNum"), IntegerType{}, Number(123)},
+		ValueAssignment{ValueReference("minusNum"), IntegerType{}, Number(-123)},
+		ValueAssignment{ValueReference("plusReal"), RealType{}, Real(123.4)},
+		ValueAssignment{ValueReference("minusReal"), RealType{}, Real(-1.234)},
+		ValueAssignment{ValueReference("plusExp"), RealType{}, Real(1234.0)},
+		ValueAssignment{ValueReference("minusExp"), RealType{}, Real(1.234)},
+	}
+	r := testNotFails(t, content)
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", r.ModuleBody.AssignmentList), fmt.Sprintf("%+v", expectedDecls); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}
+
+func TestBooleanValues(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		true BOOLEAN ::= TRUE
+		false BOOLEAN ::= FALSE
+	END
+	`
+	expectedDecls := AssignmentList{
+		ValueAssignment{ValueReference("true"), BooleanType{}, Boolean(true)},
+		ValueAssignment{ValueReference("false"), BooleanType{}, Boolean(false)},
+	}
+	r := testNotFails(t, content)
+	// quick and dirty
+	if es, ps := fmt.Sprintf("%+v", r.ModuleBody.AssignmentList), fmt.Sprintf("%+v", expectedDecls); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}

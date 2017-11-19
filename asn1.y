@@ -4,6 +4,7 @@ package asn1go
 
 import (
     "fmt"
+    "math"
 )
 %}
 ////////////////////////////
@@ -82,6 +83,8 @@ import (
 %token XML_BOOLEAN_TRUE     // TODO not implemented in lexer
 %token XML_BOOLEAN_FALSE    // TODO not implemented in lexer
 %token XMLASN1TYPENAME      // TODO not implemented in lexer
+
+%token EXPONENT // differs from spec, for REAL values to work
 
 // single-symbol tokens
 %token OPEN_CURLY  // "{"
@@ -219,6 +222,11 @@ import (
 %type <Value> BuiltinValue
 %type <Value> Value
 %type <Value> IntegerValue
+%type <Type> RealType
+%type <Value> RealValue
+%type <Type> BooleanType
+%type <Value> BooleanValue
+%type <Value> NumericRealValue SpecialRealValue
 %type <Number> SignedNumber
 %type <Number> number
 %type <Assignment> Assignment
@@ -470,7 +478,7 @@ BuiltinType : BitStringType
 //            | ObjectClassFieldType
             | ObjectIdentifierType
             | OctetStringType
-//            | RealType
+            | RealType
 //            | RelativeOIDType
             | SequenceType
             | SequenceOfType
@@ -504,18 +512,18 @@ Value : BuiltinValue
 
 // TODO
 BuiltinValue : // BitStringValue
-//             | BooleanValue
+             /*|*/ BooleanValue
 //             | CharacterStringValue
 //             | ChoiceValue
 //             | EmbeddedPDVValue
 //             | EnumeratedValue
 //             | ExternalValue
 //             | InstanceOfValue
-             /*|*/ IntegerValue
+               | IntegerValue
 //             | NullValue
                | ObjectIdentifierValue  { $$ = $1 }
 //             | OctetStringValue
-//             | RealValue
+               | RealValue
 //             | RelativeOIDValue
 //             | SequenceValue
 //             | SequenceOfValue
@@ -529,7 +537,8 @@ BuiltinValue : // BitStringValue
 BooleanType : BOOLEAN  { $$ = BooleanType{} }
 ;
 
-BooleanValue : TRUE | FALSE
+BooleanValue : TRUE  { $$ = Boolean(true) }
+             | FALSE  { $$ = Boolean(false) }
 ;
 
 // 18.1
@@ -556,29 +565,31 @@ IntegerValue : SignedNumber  { $$ = $1 }
              | identifier  { $$ = IdentifiedIntegerValue{Name: $1} }
 ;
 
+// 20.1
+
+RealType : REAL  { $$ = RealType{} }
+;
+
 // 20.6
 
 RealValue : NumericRealValue
           | SpecialRealValue
 ;
 
-NumericRealValue : realnumber
-                 | "-" realnumber
+NumericRealValue : realnumber  { $$ = $1 }
+                 | MINUS realnumber  { $$ = $2.UnaryMinus() }
 //                 | SequenceValue     // Value of the associated sequence type
 ;
 
-SpecialRealValue : PLUS_INFINITY
-                 | MINUS_INFINITY
+SpecialRealValue : PLUS_INFINITY  { $$ = Real(math.Inf(1)) }
+                 | MINUS_INFINITY  { $$ = Real(math.Inf(-1)) }
 ;
 
 // TODO this seem to be not strict enough (spaces can sneak in into composite value)
 realnumber : NUMBER  { $$ = parseRealNumber($1, 0, 0) }
            | NUMBER DOT NUMBER  { $$ = parseRealNumber($1, $3, 0) }
-           | NUMBER DOT NUMBER ExponentSymbol SignedExponent  { $$ = parseRealNumber($1, $3, $5) }
-           | NUMBER ExponentSymbol SignedExponent  { $$ = parseRealNumber($1, 0, $3) }
-;
-
-ExponentSymbol : "e" | "E"
+           | NUMBER DOT NUMBER EXPONENT SignedExponent  { $$ = parseRealNumber($1, $3, $5) }
+           | NUMBER EXPONENT SignedExponent  { $$ = parseRealNumber($1, 0, $3) }
 ;
 
 SignedExponent : NUMBER
