@@ -168,6 +168,10 @@ func (ModuleReference) IsSymbol() {}
 // identifier type
 type Identifier string
 
+func (id Identifier) Name() string {
+	return string(id)
+}
+
 // number lexem, implements Value
 type Number int
 
