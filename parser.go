@@ -2,13 +2,17 @@ package asn1go
 
 import (
 	"bufio"
+	"io"
 	"math"
 	"strings"
 )
 
 func ParseString(str string) (*ModuleDefinition, error) {
+	return ParseStream(strings.NewReader(str))
+}
+
+func ParseStream(reader io.Reader) (*ModuleDefinition, error) {
 	lex := &MyLexer{}
-	reader := strings.NewReader(str)
 	lex.bufReader = bufio.NewReader(reader)
 	yyParse(lex)
 	if lex.err != nil {
