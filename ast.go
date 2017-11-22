@@ -536,3 +536,11 @@ func (ObjectIdElement) IsObjectIdComponent() bool {
 
 // end OID
 //////////////////////////////
+
+func makeBuiltinTypes() map[string]Type {
+	return map[string]Type{
+		"GeneralizedTime": TaggedType{ // [UNIVERSAL 24] IMPLICIT VisibleString
+			Tag:  Tag{Class: CLASS_UNIVERSAL, ClassNumber: Number(24)},
+			Type: RestrictedStringType{VisibleString}},
+	}
+}

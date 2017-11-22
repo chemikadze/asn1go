@@ -27,12 +27,17 @@ const (
 	GEN_DECLARATIONS = iota
 )
 
+var (
+	USEFUL_TYPES map[string]Type
+)
+
 type declCodeGen struct{}
 
 type moduleContext struct {
 	extensibilityImplied bool
 	tagDefault           int
 	errors               []error
+	lookupContext        ModuleBody
 }
 
 func (ctx *moduleContext) appendError(err error) {
@@ -51,15 +56,16 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 	ctx := moduleContext{
 		extensibilityImplied: module.ExtensibilityImplied,
 		tagDefault:           module.TagDefault,
+		lookupContext:        module.ModuleBody,
 	}
 	ast := &goast.File{
 		Name:  goast.NewIdent(goifyName(module.ModuleIdentifier.Reference)),
 		Decls: ctx.generateDeclarations(module),
 	}
 	if len(ctx.errors) != 0 {
-		msg := "Errors generating Go AST from module: "
+		msg := "Errors generating Go AST from module: \n"
 		for _, err := range ctx.errors {
-			msg += "  " + err.Error()
+			msg += "  " + err.Error() + "\n"
 		}
 		return errors.New(msg)
 	}
@@ -131,16 +137,33 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		}
 	case SequenceOfType:
 		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
+	case TaggedType: // TODO should put tags in go code?
+		return ctx.generateTypeBody(t.Type)
+	case ConstraintedType: // TODO should generate checking code?
+		return ctx.generateTypeBody(t.Type)
+	case TypeReference: // TODO generate references instead of embedding
+		return ctx.generateTypeBody(ctx.lookupType(t))
+	case RestrictedStringType: // TODO should generate checking code?
+		return goast.NewIdent("string")
+	case BitStringType: // TODO
+		return &goast.ArrayType{Elt: goast.NewIdent("bool")}
 	default:
-		// TypeReference
 		// NullType
 		// ObjectIdentifierType
 		// ChoiceType
 		// RestrictedStringType
-		// TaggedType
-		// BitStringType
-		// ConstraintedType
-		ctx.appendError(errors.New(fmt.Sprintf("Ignoring unsupported type %+v", typeDescr)))
+		ctx.appendError(errors.New(fmt.Sprintf("Ignoring unsupported type %#v", typeDescr)))
+		return nil
+	}
+}
+
+func (ctx *moduleContext) lookupType(reference TypeReference) Type {
+	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
+		return assignment.Type
+	} else if usefulType, ok := USEFUL_TYPES[reference.Name()]; ok {
+		return usefulType
+	} else {
+		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve Type Reference %v", reference.Name())))
 		return nil
 	}
 }
