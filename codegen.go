@@ -124,11 +124,7 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		for _, field := range t.Components {
 			switch f := field.(type) {
 			case NamedComponentType:
-				gofield := &goast.Field{
-					Names: append(make([]*goast.Ident, 0), goast.NewIdent(goifyName(f.NamedType.Identifier.Name()))),
-					Type:  ctx.generateTypeBody(f.NamedType.Type),
-				}
-				fields.List = append(fields.List, gofield)
+				fields.List = append(fields.List, ctx.generateStructField(f))
 			case ComponentsOfComponentType: // TODO
 			}
 		}
@@ -155,6 +151,71 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		ctx.appendError(errors.New(fmt.Sprintf("Ignoring unsupported type %#v", typeDescr)))
 		return nil
 	}
+}
+
+func (ctx *moduleContext) generateStructField(f NamedComponentType) *goast.Field {
+	return &goast.Field{
+		Names: append(make([]*goast.Ident, 0), goast.NewIdent(goifyName(f.NamedType.Identifier.Name()))),
+		Type:  ctx.generateTypeBody(f.NamedType.Type),
+		Tag:   ctx.asn1TagFromType(f),
+	}
+}
+
+func (ctx *moduleContext) asn1TagFromType(nt NamedComponentType) *goast.BasicLit {
+	t := nt.NamedType.Type
+	components := make([]string, 0)
+	if nt.IsOptional {
+		components = append(components, "optional")
+	}
+	if nt.Default != nil {
+		if defaultNumber, ok := (*nt.Default).(Number); ok {
+			components = append(components, fmt.Sprintf("default:%v", defaultNumber.IntValue()))
+		}
+	}
+	/*
+		TODO:
+		set          causes a SET, rather than a SEQUENCE type to be expected
+		omitempty:   causes empty slices to be skipped
+		utc:         causes time.Time to be marshaled as ASN.1, UTCTime values
+		generalized: causes time.Time to be marshaled as ASN.1, GeneralizedTime values
+	*/
+	switch t := t.(type) {
+	case TaggedType:
+		if t.Tag.Class == CLASS_APPLICATION {
+			components = append(components, "application")
+		}
+		if t.TagType == TAGS_EXPLICIT {
+			components = append(components, "explicit")
+		}
+		switch cn := ctx.lookupValue(t.Tag.ClassNumber).(type) {
+		case Number:
+			components = append(components, fmt.Sprintf("tag:%v", cn.IntValue()))
+		default:
+			ctx.appendError(errors.New(fmt.Sprintf("Tag value should be Number, got %#v", cn)))
+		}
+	case RestrictedStringType:
+		switch t.LexType {
+		case IA5String:
+			components = append(components, "ia5")
+		case UTF8String:
+			components = append(components, "utf8")
+		case PrintableString:
+			components = append(components, "printable")
+		}
+	}
+	if len(components) > 0 {
+		return &goast.BasicLit{
+			Value: fmt.Sprintf("`%s`", strings.Join(components, ",")),
+			Kind:  gotoken.STRING,
+		}
+	} else {
+		return nil
+	}
+}
+
+// TODO really lookup values from module and imports
+func (ctx *moduleContext) lookupValue(val Value) Value {
+	return val
 }
 
 func (ctx *moduleContext) lookupType(reference TypeReference) Type {
