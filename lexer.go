@@ -12,11 +12,7 @@ import (
 )
 
 var (
-	RESERVED_WORDS map[string]int
-)
-
-func makeReservedWords() map[string]int {
-	return map[string]int{
+	RESERVED_WORDS map[string]int = map[string]int{
 		"ABSENT":           ABSENT,
 		"ENCODED":          ENCODED,
 		"INTEGER":          INTEGER,
@@ -98,7 +94,7 @@ func makeReservedWords() map[string]int {
 		"REAL":             REAL,
 		"WITH":             WITH,
 	}
-}
+)
 
 type MyLexer struct {
 	bufReader     *bufio.Reader

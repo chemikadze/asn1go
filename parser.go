@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func init() {
+	yyErrorVerbose = true
+}
+
 func ParseString(str string) (*ModuleDefinition, error) {
 	return ParseStream(strings.NewReader(str))
 }

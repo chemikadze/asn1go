@@ -27,10 +27,6 @@ const (
 	GEN_DECLARATIONS = iota
 )
 
-var (
-	USEFUL_TYPES map[string]Type
-)
-
 type declCodeGen struct{}
 
 type moduleContext struct {
@@ -137,8 +133,12 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		return ctx.generateTypeBody(t.Type)
 	case ConstraintedType: // TODO should generate checking code?
 		return ctx.generateTypeBody(t.Type)
-	case TypeReference: // TODO generate references instead of embedding
-		return ctx.generateTypeBody(ctx.lookupType(t))
+	case TypeReference: // TODO should useful types be separate type by itself?
+		if usefulType := ctx.lookupUsefulType(t); usefulType != nil {
+			return ctx.generateUsefulType(t, usefulType)
+		} else {
+			return goast.NewIdent(goifyName(t.Name()))
+		}
 	case RestrictedStringType: // TODO should generate checking code?
 		return goast.NewIdent("string")
 	case BitStringType: // TODO
@@ -172,29 +172,34 @@ func (ctx *moduleContext) asn1TagFromType(nt NamedComponentType) *goast.BasicLit
 			components = append(components, fmt.Sprintf("default:%v", defaultNumber.IntValue()))
 		}
 	}
-	/*
-		TODO:
-		set          causes a SET, rather than a SEQUENCE type to be expected
-		omitempty:   causes empty slices to be skipped
-		utc:         causes time.Time to be marshaled as ASN.1, UTCTime values
-		generalized: causes time.Time to be marshaled as ASN.1, GeneralizedTime values
-	*/
-	switch t := t.(type) {
-	case TaggedType:
-		if t.Tag.Class == CLASS_APPLICATION {
-			components = append(components, "application")
-		}
-		if t.TagType == TAGS_EXPLICIT {
-			components = append(components, "explicit")
-		}
-		switch cn := ctx.lookupValue(t.Tag.ClassNumber).(type) {
-		case Number:
-			components = append(components, fmt.Sprintf("tag:%v", cn.IntValue()))
+	// unwrap type
+unwrap:
+	for {
+		switch tt := t.(type) {
+		case TaggedType:
+			if tt.Tag.Class == CLASS_APPLICATION {
+				components = append(components, "application")
+			}
+			if tt.TagType == TAGS_EXPLICIT {
+				components = append(components, "explicit")
+			}
+			switch cn := ctx.lookupValue(tt.Tag.ClassNumber).(type) {
+			case Number:
+				components = append(components, fmt.Sprintf("tag:%v", cn.IntValue()))
+			default:
+				ctx.appendError(errors.New(fmt.Sprintf("Tag value should be Number, got %#v", cn)))
+			}
+			t = tt.Type
+		case ConstraintedType:
+			t = tt.Type
 		default:
-			ctx.appendError(errors.New(fmt.Sprintf("Tag value should be Number, got %#v", cn)))
+			break unwrap
 		}
+	}
+	// add type-specific tags
+	switch tt := t.(type) {
 	case RestrictedStringType:
-		switch t.LexType {
+		switch tt.LexType {
 		case IA5String:
 			components = append(components, "ia5")
 		case UTF8String:
@@ -202,6 +207,15 @@ func (ctx *moduleContext) asn1TagFromType(nt NamedComponentType) *goast.BasicLit
 		case PrintableString:
 			components = append(components, "printable")
 		}
+	case TypeReference:
+		switch ctx.unwrapToLeafType(tt).Name() {
+		case "GeneralizedTime":
+			components = append(components, "generalized")
+		case "UTCTime":
+			components = append(components, "utc")
+		}
+		// TODO set          causes a SET, rather than a SEQUENCE type to be expected
+		// TODO omitempty    causes empty slices to be skipped
 	}
 	if len(components) > 0 {
 		return &goast.BasicLit{
@@ -213,6 +227,13 @@ func (ctx *moduleContext) asn1TagFromType(nt NamedComponentType) *goast.BasicLit
 	}
 }
 
+// generateUsefulType currently yields unwrapped representations
+//
+// however, for time types, it should be better to generate time.Time instead
+func (ctx *moduleContext) generateUsefulType(ref TypeReference, t Type) goast.Expr {
+	return ctx.generateTypeBody(t)
+}
+
 // TODO really lookup values from module and imports
 func (ctx *moduleContext) lookupValue(val Value) Value {
 	return val
@@ -221,10 +242,39 @@ func (ctx *moduleContext) lookupValue(val Value) Value {
 func (ctx *moduleContext) lookupType(reference TypeReference) Type {
 	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
 		return assignment.Type
-	} else if usefulType, ok := USEFUL_TYPES[reference.Name()]; ok {
+	} else if usefulType := ctx.lookupUsefulType(reference); usefulType != nil {
 		return usefulType
 	} else {
 		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve Type Reference %v", reference.Name())))
 		return nil
+	}
+}
+
+func (ctx *moduleContext) lookupUsefulType(reference TypeReference) Type {
+	if usefulType, ok := USEFUL_TYPES[reference.Name()]; ok {
+		return usefulType
+	} else {
+		return nil
+	}
+}
+
+// unwrapToLeafType walks over transitive type references and yields "root" type reference
+func (ctx *moduleContext) unwrapToLeafType(reference TypeReference) TypeReference {
+	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
+		t := assignment.Type
+		for {
+			switch tt := t.(type) {
+			case TaggedType:
+				t = tt.Type
+			case ConstraintedType:
+				t = tt.Type
+			case TypeReference:
+				return ctx.unwrapToLeafType(tt)
+			default:
+				return reference
+			}
+		}
+	} else {
+		return reference
 	}
 }
