@@ -5,19 +5,27 @@ import (
 	"testing"
 )
 
+func generateDeclarationsString(m ModuleDefinition) (string, error) {
+	bufw := bytes.NewBufferString("")
+	gen := NewCodeGenerator(GEN_DECLARATIONS)
+	err := gen.Generate(m, bufw)
+	if err != nil {
+		return "", err
+	} else {
+		return bufw.String(), nil
+	}
+}
+
 func TestDeclMinSynax(t *testing.T) {
 	m := ModuleDefinition{
 		ModuleIdentifier: ModuleIdentifier{Reference: "My-ASN1-ModuleName"},
 	}
 	expected := `package My_ASN1_ModuleName
 `
-	bufw := bytes.NewBufferString("")
-	gen := NewCodeGenerator(GEN_DECLARATIONS)
-	err := gen.Generate(m, bufw)
+	got, err := generateDeclarationsString(m)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err.Error())
+		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	got := bufw.String()
 	if got != expected {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}
@@ -44,13 +52,10 @@ type MyString string
 type MyOctetString []byte
 type MyReal float64
 `
-	bufw := bytes.NewBufferString("")
-	gen := NewCodeGenerator(GEN_DECLARATIONS)
-	err := gen.Generate(m, bufw)
+	got, err := generateDeclarationsString(m)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err.Error())
+		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	got := bufw.String()
 	if got != expected {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}
@@ -82,19 +87,16 @@ func TestDeclSequenceTypeSyntax(t *testing.T) {
 	expected := `package My_ASN1_ModuleName
 
 type MySequence struct {
-	myIntField	int64
-	myStructField	struct {
-		myOctetString []byte
+	MyIntField	int64
+	MyStructField	struct {
+		MyOctetString []byte
 	}
 }
 `
-	bufw := bytes.NewBufferString("")
-	gen := NewCodeGenerator(GEN_DECLARATIONS)
-	err := gen.Generate(m, bufw)
+	got, err := generateDeclarationsString(m)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err.Error())
+		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	got := bufw.String()
 	if got != expected {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}
@@ -119,16 +121,13 @@ func TestDeclSequenceOFTypeSyntax(t *testing.T) {
 
 type MySequenceOfInt []int64
 type MySequenceOfSequence []struct {
-	myIntField int64
+	MyIntField int64
 }
 `
-	bufw := bytes.NewBufferString("")
-	gen := NewCodeGenerator(GEN_DECLARATIONS)
-	err := gen.Generate(m, bufw)
+	got, err := generateDeclarationsString(m)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err.Error())
+		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	got := bufw.String()
 	if got != expected {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"math"
+	"os"
 	"strings"
 )
 
@@ -23,6 +24,15 @@ func ParseStream(reader io.Reader) (*ModuleDefinition, error) {
 		return nil, lex.err
 	}
 	return lex.result, nil
+}
+
+func ParseFile(name string) (*ModuleDefinition, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return ParseStream(file)
 }
 
 func parseRealNumber(integer Number, fraction Number, exponent Number) Real {

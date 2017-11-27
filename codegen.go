@@ -69,7 +69,7 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 }
 
 func goifyName(name string) string {
-	return strings.Replace(name, "-", "_", -1)
+	return strings.Title(strings.Replace(name, "-", "_", -1))
 }
 
 /** generateDeclarations based on ModuleBody of module
