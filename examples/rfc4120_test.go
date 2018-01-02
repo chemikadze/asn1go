@@ -20,6 +20,40 @@ func TestMessagesDeclared(t *testing.T) {
 	)
 }
 
+type testCase struct {
+	bytes    []byte
+	value    interface{} // should be pointer
+	expected interface{} // should be value
+}
+
+func messageTest(t *testing.T, item testCase) {
+	// verify it can be parsed
+	parsed := item.value
+	rest, err := asn1.Unmarshal(item.bytes, parsed)
+	if err != nil {
+		t.Errorf("Failed to parse: %v", err.Error())
+	}
+	if len(rest) != 0 {
+		t.Errorf("Expected no trailing data, got %v bytes", len(rest))
+	}
+	if es, ps := fmt.Sprintf("&%+v", item.expected), fmt.Sprintf("%+v", parsed); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+
+	// verify that it can be generated and serialization is reversible
+	generatedBytes, err := asn1.Marshal(item.expected)
+	if err != nil {
+		t.Fatalf("Failed to marshall message: %v", err.Error())
+	}
+	_, err = asn1.Unmarshal(generatedBytes, parsed)
+	if err != nil {
+		t.Fatalf("Failed to unmarshall message: %v", err.Error())
+	}
+	if es, ps := fmt.Sprintf("&%+v", item.expected), fmt.Sprintf("%+v", parsed); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}
+
 func TestKdcReq(t *testing.T) {
 	msgBytes := utils.ParseWiresharkHex(`
 0000   30 81 aa a1 03 02 01 05 a2 03 02 01 0a a3 0e 30
@@ -51,31 +85,7 @@ func TestKdcReq(t *testing.T) {
 		},
 	}
 
-	// verify it can be parsed
-	var parsed AS_REQ
-	rest, err := asn1.Unmarshal(msgBytes, &parsed)
-	if err != nil {
-		t.Errorf("Failed to parse: %v", err.Error())
-	}
-	if len(rest) != 0 {
-		t.Errorf("Expected no trailing data, got %v bytes", len(rest))
-	}
-	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
-		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
-	}
-
-	// verify that it can be generated and serialization is reversible
-	generatedBytes, err := asn1.Marshal(expected)
-	if err != nil {
-		t.Fatal("Failed to marshall message")
-	}
-	_, err = asn1.Unmarshal(generatedBytes, &parsed)
-	if err != nil {
-		t.Fatal("Failed to unmarshall message")
-	}
-	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
-		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
-	}
+	messageTest(t, testCase{bytes: msgBytes, value: new(AS_REQ), expected: expected})
 }
 
 func TestKrbError(t *testing.T) {
@@ -95,11 +105,11 @@ func TestKrbError(t *testing.T) {
 `)
 	expected := KRB_ERROR{
 		Pvno:       5,
-		Msg_type:   30, // krb-error
+		Msg_type:   30,
 		Ctime:      utils.ParseWiresharkTime("2023-03-27 15:51:37"),
 		Stime:      utils.ParseWiresharkTime("2018-01-02 06:04:07"),
 		Susec:      297128,
-		Error_code: 6, // principal unknown
+		Error_code: 6,
 		Crealm:     "ATHENA.MIT.EDU",
 		Cname:      PrincipalName{1, []KerberosString{"chemikadze"}},
 		Realm:      "ATHENA.MIT.EDU",
@@ -107,29 +117,5 @@ func TestKrbError(t *testing.T) {
 		E_text:     "CLIENT_NOT_FOUND",
 	}
 
-	// verify it can be parsed
-	var parsed KRB_ERROR
-	rest, err := asn1.Unmarshal(msgBytes, &parsed)
-	if err != nil {
-		t.Errorf("Failed to parse: %v", err.Error())
-	}
-	if len(rest) != 0 {
-		t.Errorf("Expected no trailing data, got %v bytes", len(rest))
-	}
-	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
-		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
-	}
-
-	// verify that it can be generated and serialization is reversible
-	generatedBytes, err := asn1.Marshal(expected)
-	if err != nil {
-		t.Fatal("Failed to marshall message")
-	}
-	_, err = asn1.Unmarshal(generatedBytes, &parsed)
-	if err != nil {
-		t.Fatal("Failed to unmarshall message")
-	}
-	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
-		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
-	}
+	messageTest(t, testCase{bytes: msgBytes, value: new(AS_REQ), expected: expected})
 }
