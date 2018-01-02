@@ -7,4 +7,6 @@ go:
 
 before_install:
   - make deps
-  - make codegen
+  - make yacc
+  - go get ./cmd/asn1go  # for examples to work
+  - make generate

@@ -12,8 +12,8 @@ deps:
 	go get golang.org/x/tools/cmd/goyacc
 .PHONY: deps
 
-codegen: y.go
-.PHONY: codegen
+yacc: y.go
+.PHONY: yacc
 
 clean:
 	rm -f y.go

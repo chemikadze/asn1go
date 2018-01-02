@@ -57,7 +57,7 @@ func (ctx *moduleContext) requireModule(module string) {
 			return
 		}
 	}
-	ctx.requiredModules = append(ctx.requiredModules, "time")
+	ctx.requiredModules = append(ctx.requiredModules, module)
 }
 
 /** Generate declarations from module
@@ -174,7 +174,8 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case RestrictedStringType: // TODO should generate checking code?
 		return goast.NewIdent("string")
 	case BitStringType: // TODO
-		return &goast.ArrayType{Elt: goast.NewIdent("bool")}
+		ctx.requireModule("encoding/asn1")
+		return &goast.ArrayType{Elt: goast.NewIdent("asn1.BitString")}
 	default:
 		// NullType
 		// ObjectIdentifierType
