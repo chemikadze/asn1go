@@ -10,3 +10,5 @@ before_install:
   - make yacc
   - go get ./cmd/asn1go  # for examples to work
   - make generate
+
+install: make test
