@@ -165,17 +165,19 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case ConstraintedType: // TODO should generate checking code?
 		return ctx.generateTypeBody(t.Type)
 	case TypeReference: // TODO should useful types be separate type by itself?
-		leafType := ctx.resolveTypeReference(t)
-		if leafType != nil && ctx.isSpecialCase(*leafType) {
-			return ctx.generateSpecialCase(*leafType)
-		} else {
-			return goast.NewIdent(goifyName(t.Name()))
+		nameAndType := ctx.resolveTypeReference(t)
+		if nameAndType != nil {
+			specialCase := ctx.generateSpecialCase(*nameAndType)
+			if specialCase != nil {
+				return specialCase
+			}
 		}
+		return goast.NewIdent(goifyName(t.Name()))
 	case RestrictedStringType: // TODO should generate checking code?
 		return goast.NewIdent("string")
-	case BitStringType: // TODO
+	case BitStringType:
 		ctx.requireModule("encoding/asn1")
-		return &goast.ArrayType{Elt: goast.NewIdent("asn1.BitString")}
+		return goast.NewIdent("asn1.BitString")
 	default:
 		// NullType
 		// ObjectIdentifierType
@@ -241,7 +243,7 @@ unwrap:
 			components = append(components, "printable")
 		}
 	case TypeReference:
-		switch ctx.unwrapToLeafType(tt).Name() {
+		switch ctx.unwrapToLeafType(tt).TypeReference.Name() {
 		case GeneralizedTimeName:
 			components = append(components, "generalized")
 		case UTCTimeName:
@@ -260,18 +262,14 @@ unwrap:
 	}
 }
 
-func (ctx *moduleContext) isSpecialCase(ref TypeReference) bool {
-	if ref.Name() == GeneralizedTimeName || ref.Name() == UTCTimeName {
-		return true
-	}
-	return false
-}
-
-func (ctx *moduleContext) generateSpecialCase(ref TypeReference) goast.Expr {
-	if ref.Name() == GeneralizedTimeName || ref.Name() == UTCTimeName {
+func (ctx *moduleContext) generateSpecialCase(resolved TypeAssignment) goast.Expr {
+	if resolved.TypeReference.Name() == GeneralizedTimeName || resolved.TypeReference.Name() == UTCTimeName {
 		// time types in encoding/asn1go don't support wrapping of time.Time
 		ctx.requireModule("time")
 		return goast.NewIdent("time.Time")
+	} else if _, ok := ctx.removeWrapperTypes(resolved.Type).(BitStringType); ok {
+		ctx.requireModule("encoding/asn1")
+		return goast.NewIdent("asn1.BitString")
 	}
 	return nil
 }
@@ -283,18 +281,15 @@ func (ctx *moduleContext) lookupValue(val Value) Value {
 
 // resolveTypeReference resolves references until reaches unresolved type, useful type, or declared type
 // returns type reference of most nested type which is not type reference itself
-func (ctx *moduleContext) resolveTypeReference(reference TypeReference) *TypeReference {
-	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
-		switch nested := assignment.Type.(type) {
-		case TypeReference:
-			return ctx.resolveTypeReference(nested)
-		default:
-			return &reference
-		}
-	} else if ctx.lookupUsefulType(reference) != nil {
-		return &reference
+// returns nil if type is not resolved
+func (ctx *moduleContext) resolveTypeReference(reference TypeReference) *TypeAssignment {
+	unwrapped := ctx.unwrapToLeafType(reference)
+	if unwrapped.Type != nil {
+		return &unwrapped
+	} else if tt := ctx.lookupUsefulType(unwrapped.TypeReference); tt != nil {
+		return &TypeAssignment{unwrapped.TypeReference, tt}
 	} else {
-		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve Type Reference %v", reference.Name())))
+		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve TypeReference %v", reference.Name())))
 		return nil
 	}
 }
@@ -307,23 +302,28 @@ func (ctx *moduleContext) lookupUsefulType(reference TypeReference) Type {
 	}
 }
 
-// unwrapToLeafType walks over transitive type references and yields "root" type reference
-func (ctx *moduleContext) unwrapToLeafType(reference TypeReference) TypeReference {
+func (ctx *moduleContext) removeWrapperTypes(t Type) Type {
+	for {
+		switch tt := t.(type) {
+		case TaggedType:
+			t = tt.Type
+		case ConstraintedType:
+			t = tt.Type
+		default:
+			return t
+		}
+	}
+}
+
+// unwrapToLeafType walks over transitive type references, tags and constraints and yields "root" type reference
+func (ctx *moduleContext) unwrapToLeafType(reference TypeReference) TypeAssignment {
 	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
 		t := assignment.Type
-		for {
-			switch tt := t.(type) {
-			case TaggedType:
-				t = tt.Type
-			case ConstraintedType:
-				t = tt.Type
-			case TypeReference:
-				return ctx.unwrapToLeafType(tt)
-			default:
-				return reference
-			}
+		if tt, ok := ctx.removeWrapperTypes(t).(TypeReference); ok {
+			return ctx.unwrapToLeafType(tt)
+		} else {
+			return *assignment
 		}
-	} else {
-		return reference
 	}
+	return TypeAssignment{reference, nil}
 }

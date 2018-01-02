@@ -1,18 +1,13 @@
 package examples
 
 import (
-	"testing"
-	"github.com/chemikadze/asn1go/internal/utils"
-	"os"
 	"encoding/asn1"
 	"fmt"
+	"github.com/chemikadze/asn1go/internal/utils"
+	"testing"
 )
 
-var (
-	_ = os.Args
-)
-
-//go:generate asn1go -package examples rfc4120.asn1 rfc4120_generated.go
+//go:generate go run ../cmd/asn1go/main.go -package examples rfc4120.asn1 rfc4120_generated.go
 
 func TestMessagesDeclared(t *testing.T) {
 	var (
@@ -25,9 +20,7 @@ func TestMessagesDeclared(t *testing.T) {
 	)
 }
 
-
-// TODO: Failed to parse: asn1: structure error: tags don't match (16 vs {class:0 tag:3 length:5 isCompound:false}) {optional:false explicit:true application:false defaultValue:<nil> tag:0x820306790 stringType:0 timeType:0 set:false omitEmpty:false} KDCOptions @4
-func disabled_TestKdcReq(t *testing.T) {
+func TestKdcReq(t *testing.T) {
 	msgBytes := utils.ParseWiresharkHex(`
 0000   30 81 aa a1 03 02 01 05 a2 03 02 01 0a a3 0e 30
 0010   0c 30 0a a1 04 02 02 00 95 a2 02 04 00 a4 81 8d
@@ -41,14 +34,47 @@ func disabled_TestKdcReq(t *testing.T) {
 0090   06 02 04 64 21 bb 89 a8 14 30 12 02 01 12 02 01
 00a0   11 02 01 10 02 01 17 02 01 19 02 01 1a
 `)
+	expected := AS_REQ{
+		Pvno:     5,
+		Msg_type: 10,
+		Padata: []PA_DATA{
+			{149, []byte{}},
+		},
+		Req_body: KDC_REQ_BODY{
+			Kdc_options: asn1.BitString{[]byte{0x00, 0x00, 0x00, 0x10}, 32},
+			Cname:       PrincipalName{1, []KerberosString{"chemikadze"}},
+			Realm:       "ATHENA.MIT.EDU",
+			Sname:       PrincipalName{2, []KerberosString{"krbtgt", "ATHENA.MIT.EDU"}},
+			Till:        utils.ParseWiresharkTime("2018-01-03 06:04:07"),
+			Nonce:       1679932297,
+			Etype:       []Int32{18, 17, 16, 23, 25, 26},
+		},
+	}
 
-	var req AS_REQ
-	rest, err := asn1.Unmarshal(msgBytes, &req)
+	// verify it can be parsed
+	var parsed AS_REQ
+	rest, err := asn1.Unmarshal(msgBytes, &parsed)
 	if err != nil {
 		t.Errorf("Failed to parse: %v", err.Error())
 	}
 	if len(rest) != 0 {
 		t.Errorf("Expected no trailing data, got %v bytes", len(rest))
+	}
+	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+
+	// verify that it can be generated and serialization is reversible
+	generatedBytes, err := asn1.Marshal(expected)
+	if err != nil {
+		t.Fatal("Failed to marshall message")
+	}
+	_, err = asn1.Unmarshal(generatedBytes, &parsed)
+	if err != nil {
+		t.Fatal("Failed to unmarshall message")
+	}
+	if es, ps := fmt.Sprintf("%+v", expected), fmt.Sprintf("%+v", parsed); es != ps {
+		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
 	}
 }
 
@@ -68,17 +94,17 @@ func TestKrbError(t *testing.T) {
 00b0   46 4f 55 4e 44
 `)
 	expected := KRB_ERROR{
-		Pvno: 5,
-		Msg_type: 30,  // krb-error
-		Ctime: utils.ParseWiresharkTime("2023-03-27 15:51:37"),
-		Stime: utils.ParseWiresharkTime("2018-01-02 06:04:07"),
-		Susec: 297128,
+		Pvno:       5,
+		Msg_type:   30, // krb-error
+		Ctime:      utils.ParseWiresharkTime("2023-03-27 15:51:37"),
+		Stime:      utils.ParseWiresharkTime("2018-01-02 06:04:07"),
+		Susec:      297128,
 		Error_code: 6, // principal unknown
-		Crealm: "ATHENA.MIT.EDU",
-		Cname: PrincipalName{1, []KerberosString{"chemikadze"}},
-		Realm: "ATHENA.MIT.EDU",
-		Sname: PrincipalName{2, []KerberosString{"krbtgt", "ATHENA.MIT.EDU"}},
-		E_text: "CLIENT_NOT_FOUND",
+		Crealm:     "ATHENA.MIT.EDU",
+		Cname:      PrincipalName{1, []KerberosString{"chemikadze"}},
+		Realm:      "ATHENA.MIT.EDU",
+		Sname:      PrincipalName{2, []KerberosString{"krbtgt", "ATHENA.MIT.EDU"}},
+		E_text:     "CLIENT_NOT_FOUND",
 	}
 
 	// verify it can be parsed

@@ -183,3 +183,56 @@ type MySequence struct {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}
 }
+
+func TestBitString(t *testing.T) {
+	m := testModule(AssignmentList{
+		TypeAssignment{TypeReference("MyBitStringType"), ConstraintedType{
+			Type: BitStringType{},
+			Constraint: Constraint{ConstraintSpec: SubtypeConstraint{
+				Unions{Intersections{IntersectionElements{Elements: SizeConstraint{Constraint: Constraint{ConstraintSpec: SubtypeConstraint{
+					Unions{Intersections{IntersectionElements{Elements: ValueRange{
+						LowerEndpoint: RangeEndpoint{Value: Number(32)},
+						UpperEndpoint: RangeEndpoint{},
+					},
+					}}},
+				}},
+				},
+				}}},
+			}},
+		}},
+		TypeAssignment{TypeReference("MyNestedBitStringType"), TypeReference("MyBitStringType")},
+		TypeAssignment{TypeReference("MySequence"), SequenceType{Components: ComponentTypeList{
+			NamedComponentType{NamedType: NamedType{
+				Identifier: Identifier("myNestedBitStringField"),
+				Type:       TypeReference("MyNestedBitStringType"),
+			}},
+			NamedComponentType{NamedType: NamedType{
+				Identifier: Identifier("myBitStringField"),
+				Type:       TypeReference("MyBitStringType"),
+			}},
+			NamedComponentType{NamedType: NamedType{
+				Identifier: Identifier("bitStringField"),
+				Type:       BitStringType{},
+			}},
+		}}},
+	})
+	expected := `package My_ASN1_ModuleName
+
+import "encoding/asn1"
+
+type MyBitStringType asn1.BitString
+type MyNestedBitStringType asn1.BitString
+type MySequence struct {
+	MyNestedBitStringField	asn1.BitString
+	MyBitStringField	asn1.BitString
+	BitStringField		asn1.BitString
+}
+`
+	got, err := generateDeclarationsString(m)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err.Error())
+	}
+	if got != expected {
+		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
+	}
+}
