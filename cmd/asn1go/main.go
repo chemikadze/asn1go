@@ -16,8 +16,9 @@ reads from stdin.
 `
 
 type flagsType struct {
-	inputName  string
-	outputName string
+	inputName   string
+	outputName  string
+	packageName string
 }
 
 func failWithError(format string, args ...interface{}) {
@@ -26,15 +27,17 @@ func failWithError(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-func parseFlags() (res flagsType) {
-	flag.Parse()
-	if flag.NArg() > 0 {
-		res.inputName = flag.Arg(0)
+func parseFlags(args []string) (res flagsType) {
+	cmd := flag.NewFlagSet(args[0], flag.ExitOnError)
+	cmd.StringVar(&res.packageName, "package", "", "package name for generated code")
+	cmd.Parse(args[1:])
+	if cmd.NArg() > 0 {
+		res.inputName = cmd.Arg(0)
 	}
-	if flag.NArg() == 2 {
-		res.outputName = flag.Arg(1)
+	if cmd.NArg() == 2 {
+		res.outputName = cmd.Arg(1)
 	}
-	if flag.NArg() > 2 {
+	if cmd.NArg() > 2 {
 		failWithError(usage)
 	}
 	return res
@@ -60,16 +63,17 @@ func openChannels(inputName, outputName string) (input, output *os.File) {
 }
 
 func main() {
-	flag.Parse()
-	flags := parseFlags()
+	flags := parseFlags(os.Args)
 	input, output := openChannels(flags.inputName, flags.outputName)
 
 	module, err := asn1go.ParseStream(input)
 	if err != nil {
 		failWithError(err.Error())
 	}
-
-	gen := asn1go.NewCodeGenerator(asn1go.GEN_DECLARATIONS)
+	params := asn1go.GenParams{
+		Package: flags.packageName,
+	}
+	gen := asn1go.NewCodeGenerator(params)
 	err = gen.Generate(*module, output)
 	if err != nil {
 		failWithError(err.Error())

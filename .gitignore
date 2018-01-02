@@ -1,3 +1,4 @@
 .idea
 y.go
 y.output
+*_generated.go

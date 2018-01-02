@@ -1,26 +1,13 @@
 package asn1go
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
+	"github.com/chemikadze/asn1go/internal/utils"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 	"text/template"
 )
-
-var runCommandError = `Failed to run program: %v
-stdout:
-
-%v
-
-stderr:
-
-%v
-`
 
 var driverProgramTemplate = `
 package main
@@ -40,6 +27,7 @@ func main() {
   {{ $ctx := . }}
   {{ range $index, $assignment := .TypeAssignments }}
   	{{ $typeName := printf "%v.%v" $ctx.ModuleName (call $ctx.Goify $assignment.TypeReference.Name) }}
+  	{{ if not (call $ctx.In $assignment.TypeReference.Name $ctx.IgnoreTypes) }}
   	{
   		fmt.Println("Testing {{ $typeName }}...")
 	  	var x {{ $typeName }}
@@ -55,6 +43,7 @@ func main() {
 	  		ok = false
 	  	}
   	}
+  	{{ end }}
   {{ end }}
   if !ok {
   	fmt.Println("Test failed")
@@ -62,23 +51,6 @@ func main() {
   }
 }
 `
-
-func runCommand(command string, args ...string) error {
-	cmd := exec.Command(command, args...)
-	stdout := bytes.NewBufferString("")
-	stderr := bytes.NewBufferString("")
-	cmd.Stdout, cmd.Stderr = stdout, stderr
-	err := cmd.Run()
-	if err != nil {
-		return errors.New(fmt.Sprintf(runCommandError, err.Error(), stdout, stderr))
-	} else {
-		return nil
-	}
-}
-
-func createTestTemp() (string, error) {
-	return ioutil.TempDir("", "asn1go_test")
-}
 
 func renderModule(baseDir, moduleName, module string) (filePath string, err error) {
 	// create module
@@ -99,7 +71,18 @@ func renderModule(baseDir, moduleName, module string) (filePath string, err erro
 type driverProgramContext struct {
 	ModuleName      string
 	Goify           func(string) string
+	In              func(string, []string) bool
 	TypeAssignments []TypeAssignment
+	IgnoreTypes     []string
+}
+
+func isStringInArray(s string, arr []string) bool {
+	for _, elem := range arr {
+		if s == elem {
+			return true
+		}
+	}
+	return false
 }
 
 func filterTypeAssignments(assignments AssignmentList) (res []TypeAssignment) {
@@ -111,7 +94,7 @@ func filterTypeAssignments(assignments AssignmentList) (res []TypeAssignment) {
 	return res
 }
 
-func renderDriverProgram(driverPath, moduleName string, module ModuleDefinition) error {
+func renderDriverProgram(driverPath, moduleName string, module ModuleDefinition, ignores []string) error {
 	templ, err := template.New("main.go").Parse(driverProgramTemplate)
 	if err != nil {
 		return err
@@ -125,6 +108,8 @@ func renderDriverProgram(driverPath, moduleName string, module ModuleDefinition)
 		ModuleName:      moduleName,
 		Goify:           goifyName,
 		TypeAssignments: filterTypeAssignments(module.ModuleBody.AssignmentList),
+		In:              isStringInArray,
+		IgnoreTypes:     ignores,
 	}
 	err = templ.Execute(driverFile, ctx)
 	if err != nil {
@@ -134,7 +119,7 @@ func renderDriverProgram(driverPath, moduleName string, module ModuleDefinition)
 }
 
 func tryCompileModule(moduleName, module string) error {
-	tempPath, err := createTestTemp()
+	tempPath, err := utils.CreateTestTemp()
 	if err != nil {
 		return err
 	}
@@ -145,15 +130,15 @@ func tryCompileModule(moduleName, module string) error {
 		return err
 	}
 	// test module compiles
-	err = runCommand("go", "build", filePath)
+	err = utils.RunCommandForResult("go", "build", filePath)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func dryrunModule(moduleName, module string, moduleAst ModuleDefinition) error {
-	tempPath, err := createTestTemp()
+func dryrunModule(moduleName, module string, moduleAst ModuleDefinition, ignores []string) error {
+	tempPath, err := utils.CreateTestTemp()
 	if err != nil {
 		return err
 	}
@@ -165,12 +150,12 @@ func dryrunModule(moduleName, module string, moduleAst ModuleDefinition) error {
 	}
 	// create driver program
 	driverPath := filepath.Join(tempPath, "main.go")
-	err = renderDriverProgram(driverPath, moduleName, moduleAst)
+	err = renderDriverProgram(driverPath, moduleName, moduleAst, ignores)
 	if err != nil {
 		return err
 	}
 	// test module compiles
-	err = runCommand("go", "run", driverPath)
+	err = utils.RunCommandForResult("go", "run", driverPath)
 	if err != nil {
 		return err
 	}
@@ -201,7 +186,7 @@ func TestKerberosRuns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	err = dryrunModule(ast.ModuleIdentifier.Reference, module, *ast)
+	err = dryrunModule(ast.ModuleIdentifier.Reference, module, *ast, []string{"KerberosTime"})
 	if err != nil {
 		t.Fatal(err.Error())
 	}

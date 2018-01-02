@@ -537,9 +537,14 @@ func (ObjectIdElement) IsObjectIdComponent() bool {
 // end OID
 //////////////////////////////
 
+const (
+	GeneralizedTimeName = "GeneralizedTime"
+	UTCTimeName         = "UTCTime"
+)
+
 var (
 	USEFUL_TYPES map[string]Type = map[string]Type{
-		"GeneralizedTime": TaggedType{ // [UNIVERSAL 24] IMPLICIT VisibleString
+		GeneralizedTimeName: TaggedType{ // [UNIVERSAL 24] IMPLICIT VisibleString
 			Tag:  Tag{Class: CLASS_UNIVERSAL, ClassNumber: Number(24)},
 			Type: RestrictedStringType{VisibleString}},
 	}

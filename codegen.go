@@ -14,30 +14,50 @@ type CodeGenerator interface {
 	Generate(module ModuleDefinition, writer io.Writer) error
 }
 
-func NewCodeGenerator(gentype int) CodeGenerator {
-	switch gentype {
+type GenParams struct {
+	Package string
+	Prefix  string
+	Type    GenType
+}
+
+type GenType int
+
+const (
+	GEN_DECLARATIONS GenType = iota
+)
+
+func NewCodeGenerator(params GenParams) CodeGenerator {
+	switch params.Type {
 	case GEN_DECLARATIONS:
-		return &declCodeGen{}
+		return &declCodeGen{params}
 	default:
 		return nil
 	}
 }
 
-const (
-	GEN_DECLARATIONS = iota
-)
-
-type declCodeGen struct{}
+type declCodeGen struct {
+	Params GenParams
+}
 
 type moduleContext struct {
 	extensibilityImplied bool
 	tagDefault           int
 	errors               []error
 	lookupContext        ModuleBody
+	requiredModules      []string
 }
 
 func (ctx *moduleContext) appendError(err error) {
 	ctx.errors = append(ctx.errors, err)
+}
+
+func (ctx *moduleContext) requireModule(module string) {
+	for _, existing := range ctx.requiredModules {
+		if existing == module {
+			return
+		}
+	}
+	ctx.requiredModules = append(ctx.requiredModules, "time")
 }
 
 /** Generate declarations from module
@@ -54,8 +74,12 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 		tagDefault:           module.TagDefault,
 		lookupContext:        module.ModuleBody,
 	}
+	moduleName := goast.NewIdent(goifyName(module.ModuleIdentifier.Reference))
+	if len(gen.Params.Package) > 0 {
+		moduleName = goast.NewIdent(gen.Params.Package)
+	}
 	ast := &goast.File{
-		Name:  goast.NewIdent(goifyName(module.ModuleIdentifier.Reference)),
+		Name:  moduleName,
 		Decls: ctx.generateDeclarations(module),
 	}
 	if len(ctx.errors) != 0 {
@@ -65,6 +89,13 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 		}
 		return errors.New(msg)
 	}
+	importDecls := make([]goast.Decl, 0)
+	for _, moduleName := range ctx.requiredModules {
+		modulePath := &goast.BasicLit{Kind: gotoken.STRING, Value: fmt.Sprintf("\"%v\"", moduleName)}
+		specs := []goast.Spec{&goast.ImportSpec{Path: modulePath}}
+		importDecls = append(importDecls, &goast.GenDecl{Tok: gotoken.IMPORT, Specs: specs})
+	}
+	ast.Decls = append(importDecls, ast.Decls...)
 	return goprint.Fprint(writer, gotoken.NewFileSet(), ast)
 }
 
@@ -134,8 +165,9 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case ConstraintedType: // TODO should generate checking code?
 		return ctx.generateTypeBody(t.Type)
 	case TypeReference: // TODO should useful types be separate type by itself?
-		if usefulType := ctx.lookupUsefulType(t); usefulType != nil {
-			return ctx.generateUsefulType(t, usefulType)
+		leafType := ctx.resolveTypeReference(t)
+		if leafType != nil && ctx.isSpecialCase(*leafType) {
+			return ctx.generateSpecialCase(*leafType)
 		} else {
 			return goast.NewIdent(goifyName(t.Name()))
 		}
@@ -209,9 +241,9 @@ unwrap:
 		}
 	case TypeReference:
 		switch ctx.unwrapToLeafType(tt).Name() {
-		case "GeneralizedTime":
+		case GeneralizedTimeName:
 			components = append(components, "generalized")
-		case "UTCTime":
+		case UTCTimeName:
 			components = append(components, "utc")
 		}
 		// TODO set          causes a SET, rather than a SEQUENCE type to be expected
@@ -219,7 +251,7 @@ unwrap:
 	}
 	if len(components) > 0 {
 		return &goast.BasicLit{
-			Value: fmt.Sprintf("`%s`", strings.Join(components, ",")),
+			Value: fmt.Sprintf("`asn1:\"%s\"`", strings.Join(components, ",")),
 			Kind:  gotoken.STRING,
 		}
 	} else {
@@ -227,11 +259,20 @@ unwrap:
 	}
 }
 
-// generateUsefulType currently yields unwrapped representations
-//
-// however, for time types, it should be better to generate time.Time instead
-func (ctx *moduleContext) generateUsefulType(ref TypeReference, t Type) goast.Expr {
-	return ctx.generateTypeBody(t)
+func (ctx *moduleContext) isSpecialCase(ref TypeReference) bool {
+	if ref.Name() == GeneralizedTimeName || ref.Name() == UTCTimeName {
+		return true
+	}
+	return false
+}
+
+func (ctx *moduleContext) generateSpecialCase(ref TypeReference) goast.Expr {
+	if ref.Name() == GeneralizedTimeName || ref.Name() == UTCTimeName {
+		// time types in encoding/asn1go don't support wrapping of time.Time
+		ctx.requireModule("time")
+		return goast.NewIdent("time.Time")
+	}
+	return nil
 }
 
 // TODO really lookup values from module and imports
@@ -239,11 +280,18 @@ func (ctx *moduleContext) lookupValue(val Value) Value {
 	return val
 }
 
-func (ctx *moduleContext) lookupType(reference TypeReference) Type {
+// resolveTypeReference resolves references until reaches unresolved type, useful type, or declared type
+// returns type reference of most nested type which is not type reference itself
+func (ctx *moduleContext) resolveTypeReference(reference TypeReference) *TypeReference {
 	if assignment := ctx.lookupContext.AssignmentList.GetType(reference.Name()); assignment != nil {
-		return assignment.Type
-	} else if usefulType := ctx.lookupUsefulType(reference); usefulType != nil {
-		return usefulType
+		switch nested := assignment.Type.(type) {
+		case TypeReference:
+			return ctx.resolveTypeReference(nested)
+		default:
+			return &reference
+		}
+	} else if ctx.lookupUsefulType(reference) != nil {
+		return &reference
 	} else {
 		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve Type Reference %v", reference.Name())))
 		return nil
