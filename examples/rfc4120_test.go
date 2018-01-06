@@ -117,5 +117,5 @@ func TestKrbError(t *testing.T) {
 		E_text:     "CLIENT_NOT_FOUND",
 	}
 
-	messageTest(t, testCase{bytes: msgBytes, value: new(AS_REQ), expected: expected})
+	messageTest(t, testCase{bytes: msgBytes, value: new(KRB_ERROR), expected: expected})
 }
