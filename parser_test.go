@@ -2,7 +2,6 @@ package asn1go
 
 import (
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"testing"
 )
@@ -27,30 +26,6 @@ func TestParseMinimalModule(t *testing.T) {
 	if r.ExtensibilityImplied != true {
 		t.Error("EXTENSIBILITY IMPLIED should set the flag")
 	}
-}
-
-func TestParseKerberos(t *testing.T) {
-	content, err := ioutil.ReadFile("examples/rfc4120.asn1")
-	if err != nil {
-		t.Errorf("Failed to read file: %s", err.Error())
-	}
-	testNotFails(t, string(content))
-}
-
-func TestParseSNMP(t *testing.T) {
-	content, err := ioutil.ReadFile("examples/rfc1157.asn1")
-	if err != nil {
-		t.Errorf("Failed to read file: %s", err.Error())
-	}
-	testNotFails(t, string(content))
-}
-
-func TestParseSNMPSMI(t *testing.T) {
-	content, err := ioutil.ReadFile("examples/rfc1155.asn1")
-	if err != nil {
-		t.Errorf("Failed to read file: %s", err.Error())
-	}
-	testNotFails(t, string(content))
 }
 
 func TestParseImports(t *testing.T) {
