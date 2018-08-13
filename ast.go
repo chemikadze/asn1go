@@ -131,6 +131,9 @@ func (t NamedType) Zero() interface{} {
 	return t.Type.Zero()
 }
 
+func (t NamedType) isChoiceExtension() {
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // References
 
@@ -249,11 +252,16 @@ func (BooleanType) Zero() interface{} {
 
 type ChoiceType struct {
 	AlternativeTypeList []NamedType
+	ExtensionTypes      []ChoiceExtension
 	// TODO ExtensionAndException
 }
 
 func (ChoiceType) Zero() interface{} {
 	return nil
+}
+
+type ChoiceExtension interface {
+	isChoiceExtension()
 }
 
 ////////////////////////////////////////////////

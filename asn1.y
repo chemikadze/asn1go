@@ -60,6 +60,8 @@ import (
     GlobalModuleReference GlobalModuleReference
     AlternativeTypeList []NamedType
     ChoiceType ChoiceType
+    ExtensionAdditionAlternative ChoiceExtension
+    ExtensionAdditionAlternativesList []ChoiceExtension
 }
 
 %token WHITESPACE
@@ -289,6 +291,9 @@ import (
 %type <ChoiceType> AlternativeTypeLists
 %type <AlternativeTypeList> AlternativeTypeList RootAlternativeTypeList
 %type <NamedType> NamedType
+%type <ExtensionAdditionAlternative> ExtensionAdditionAlternative
+%type <ExtensionAdditionAlternativesList> ExtensionAdditionAlternatives
+%type <ExtensionAdditionAlternativesList> ExtensionAdditionAlternativesList
 
 
 //
@@ -682,27 +687,27 @@ ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
 ChoiceType : CHOICE OPEN_CURLY AlternativeTypeLists CLOSE_CURLY  { $$ = $3 }
 ;
 
-// TODO no extensions
-AlternativeTypeLists : RootAlternativeTypeList  { $$ = ChoiceType{$1} }
-                     | RootAlternativeTypeList COMMA ExtensionAndException ExtensionAdditionAlternatives OptionalExtensionMarker
-                         { $$ = ChoiceType{$1} }
+AlternativeTypeLists : AlternativeTypeList COMMA ExtensionAndException ExtensionAdditionAlternatives OptionalExtensionMarker { $$ = ChoiceType{$1,$4} }
+                     | AlternativeTypeList  { $$ = ChoiceType{AlternativeTypeList: $1} }
 ;
 
+// defined in grammar, but screws up ExtensionAndException parsing
 RootAlternativeTypeList : AlternativeTypeList
 ;
 
-ExtensionAdditionAlternatives : COMMA ExtensionAdditionAlternativesList
-                              | /*empty*/
+ExtensionAdditionAlternatives : COMMA ExtensionAdditionAlternativesList { $$ = $2 }
+                              | /*empty*/ { $$ = make([]ChoiceExtension, 0) }
 ;
 
-ExtensionAdditionAlternativesList : ExtensionAdditionAlternative
-                                  | ExtensionAdditionAlternativesList COMMA ExtensionAdditionAlternative
+ExtensionAdditionAlternativesList : ExtensionAdditionAlternative  { $$ = append(make([]ChoiceExtension, 0), $1) }
+                                  | ExtensionAdditionAlternativesList COMMA ExtensionAdditionAlternative  { $$ = append($1, $3) }
 ;
 
-ExtensionAdditionAlternative : ExtensionAdditionAlternativesGroup
-                             | NamedType
+ExtensionAdditionAlternative : /*ExtensionAdditionAlternativesGroup
+                             | */NamedType  { $$ = $1 }
 ;
 
+// TODO
 ExtensionAdditionAlternativesGroup : LEFT_VERSION_BRACKETS VersionNumber AlternativeTypeList RIGHT_VERSION_BRACKETS
 ;
 
