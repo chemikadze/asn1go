@@ -353,6 +353,14 @@ func (SequenceOfType) Zero() interface{} {
 	return make([]interface{}, 0)
 }
 
+type SetOfType struct {
+	Type Type
+}
+
+func (SetOfType) Zero() interface{} {
+	return make([]interface{}, 0)
+}
+
 // BIT STRING with optional named bits
 type BitStringType struct {
 	NamedBits []NamedBit

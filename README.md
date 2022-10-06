@@ -38,4 +38,23 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [x] verify serialization on Kerberos
  - [ ] DER serialization generator
  - [ ] DER deserialization generator
- 
+4) Missing ASN features
+ - [ ] SET
+ - [ ] ANY (1988?)
+ - [ ] WITH COMPONENTS
+ - [ ] _Add more as found_
+
+## Adding features
+
+Real-world ASN.1 descriptions from RFC documents are used to gauge completeness of the implementation.
+Standard itself is pretty huge, so features are added as needed.
+
+Typically, this requires:
+
+1) Modifying asn1.y to uncomment unsupported branches of syntax notation, and add missing declarations. 
+   Refer to goyacc documentation for .y syntax notation.
+2) Extending ast.go with necessary fields and types.
+3) Modifying codegen.go to produce corresponding Go declarations. Note that not all ASN declarations can be mapped to 
+   crypto/asn1. 
+
+For example, refer to [CHOICE implementation](https://github.com/chemikadze/asn1go/commit/884e30ce6a93c4e9df7ad7711889651fbcda01ce).

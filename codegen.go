@@ -160,6 +160,8 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		}
 	case SequenceOfType:
 		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
+	case SetOfType:
+		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
 	case TaggedType: // TODO should put tags in go code?
 		return ctx.generateTypeBody(t.Type)
 	case ConstraintedType: // TODO should generate checking code?

@@ -265,6 +265,7 @@ import (
 %type <Type> DefinedType ReferencedType
 %type <Type> SequenceType
 %type <Type> SequenceOfType
+%type <Type> SetOfType
 %type <ComponentType> ComponentType
 %type <ComponentTypeList> ComponentTypeList
 %type <ComponentTypeList> RootComponentTypeList
@@ -488,7 +489,7 @@ BuiltinType : BitStringType
             | SequenceType
             | SequenceOfType
 //            | SetType
-//            | SetOfType
+            | SetOfType
             | TaggedType
 ;
 
@@ -681,6 +682,11 @@ ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
               | COMPONENTS OF Type  { $$ = ComponentsOfComponentType{Type: $3} }
 ;
 
+// 27.1
+
+SetOfType : SET OF Type  { $$ = SetOfType{$3} }
+          | SET OF NamedType  { $$ = SetOfType{$3} }
+
 // 28.1
 
 
@@ -811,6 +817,7 @@ UnrestrictedCharacterStringType : CHARACTER STRING  { $$ = CharacterStringType{}
 // 41.1
 
 UsefulType : GeneralizedTime  { $$ = TypeReference("GeneralizedTime") }
+           | UTCTime  { $$ = TypeReference("UTCTime") }
 ;
 
 // 45.1
@@ -821,12 +828,12 @@ ConstrainedType : Type Constraint  { $$ = ConstraintedType{$1, $2} }
 
 // 45.5
 
-TypeWithConstraint : //SET Constraint OF Type
-                   //| SET SizeConstraint OF Type
-                   /*|*/ SEQUENCE Constraint OF Type  { $$ = ConstraintedType{SequenceOfType{$4}, $2} }
+TypeWithConstraint : SET Constraint OF Type  { $$ = ConstraintedType{SetOfType{$4}, $2} }
+                   | SET SizeConstraint OF Type  { $$ = ConstraintedType{SetOfType{$4}, SingleElementConstraint($2)} }
+                   | SEQUENCE Constraint OF Type  { $$ = ConstraintedType{SequenceOfType{$4}, $2} }
                    | SEQUENCE SizeConstraint OF Type  { $$ = ConstraintedType{SequenceOfType{$4}, SingleElementConstraint($2)} }
-                   //| SET Constraint OF NamedType
-                   //| SET SizeConstraint OF NamedType
+                   | SET Constraint OF NamedType  { $$ = ConstraintedType{SetOfType{$4}, $2} }
+                   | SET SizeConstraint OF NamedType  { $$ = ConstraintedType{SetOfType{$4}, SingleElementConstraint($2)} }
                    | SEQUENCE Constraint OF NamedType  { $$ = ConstraintedType{SequenceOfType{$4}, $2} }
                    | SEQUENCE SizeConstraint OF NamedType  { $$ = ConstraintedType{SequenceOfType{$4}, SingleElementConstraint($2)} }
 ;
