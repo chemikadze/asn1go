@@ -3,7 +3,6 @@ package asn1go
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -101,6 +100,8 @@ type MyLexer struct {
 	err           error
 	result        *ModuleDefinition
 	lastWasNumber bool
+
+	lineNo int
 }
 
 func (lex *MyLexer) Lex(lval *yySymType) int {
@@ -230,14 +231,21 @@ func (lex *MyLexer) consumeSingleSymbol(r rune) int {
 
 func (lex *MyLexer) unreadRune() error {
 	r := lex.bufReader.UnreadRune()
+	// TODO(nsokolov): against guidelines, remove panic
 	if r != nil {
 		panic(r.Error())
+	}
+	if isNewline(lex.peekRune()) {
+		lex.lineNo -= 1
 	}
 	return r
 }
 
 func (lex *MyLexer) readRune() (rune, int, error) {
 	r, n, err := lex.bufReader.ReadRune()
+	if isNewline(r) {
+		lex.lineNo += 1
+	}
 	return r, n, err
 }
 
@@ -335,7 +343,7 @@ func (lex *MyLexer) consumeWord() (string, error) {
 		if err == io.EOF || isWhitespace(r) || !isIdentifierChar(r) {
 			label := acc.String()
 			if label[len(label)-1] == '-' {
-				return "", errors.New(fmt.Sprintf("Token can not end on hyphen, got %v", label))
+				return "", fmt.Errorf("token can not end on hyphen, got %v", label)
 			}
 			if err == nil {
 				lex.unreadRune()
@@ -343,15 +351,15 @@ func (lex *MyLexer) consumeWord() (string, error) {
 			return label, nil
 		}
 		if err != nil {
-			return "", errors.New(fmt.Sprintf("Failed to read: %v", err.Error()))
+			return "", fmt.Errorf("failed to read: %v", err.Error())
 		}
 		if !isIdentifierChar(r) {
 			acc.WriteRune(r)
-			return "", errors.New(fmt.Sprintf("Expected valid identifier char, got '%c' while reading '%v'", r, acc.String()))
+			return "", fmt.Errorf("expected valid identifier char, got '%c' while reading '%v'", r, acc.String())
 		}
 		acc.WriteRune(r)
 		if lastR == '-' && r == '-' {
-			return "", errors.New(fmt.Sprintf("Token can not contain two hyphens in a row, got %v", acc.String()))
+			return "", fmt.Errorf("token can not contain two hyphens in a row, got %v", acc.String())
 		}
 		lastR = r
 	}
@@ -390,7 +398,7 @@ func (lex *MyLexer) consumeNumber(lval *yySymType) int {
 }
 
 func (lex *MyLexer) Error(e string) {
-	lex.err = errors.New(e)
+	lex.err = fmt.Errorf("line %v: %v", lex.lineNo+1, e)
 }
 
 func isWhitespace(r rune) bool {

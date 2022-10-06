@@ -71,15 +71,15 @@ func ui(t *yySymType) string {
 func TestTypeReference(t *testing.T) {
 	testLexem(t, utr, "MyTypeReference", TYPEORMODULEREFERENCE, "MyTypeReference")
 	testLexem(t, utr, "My-Type-Reference", TYPEORMODULEREFERENCE, "My-Type-Reference")
-	testError(t, "My--Type-Reference", "Token can not contain two hyphens in a row, got My--")
-	testError(t, "MyTypeReference-", "Token can not end on hyphen, got MyTypeReference-")
+	testError(t, "My--Type-Reference", "line 1: token can not contain two hyphens in a row, got My--")
+	testError(t, "MyTypeReference-", "line 1: token can not end on hyphen, got MyTypeReference-")
 }
 
 func TestIdentifier(t *testing.T) {
 	testLexem(t, ui, "myIdentifier", VALUEIDENTIFIER, "myIdentifier")
 	testLexem(t, ui, "my-Identifier", VALUEIDENTIFIER, "my-Identifier")
-	testError(t, "my--Identifier", "Token can not contain two hyphens in a row, got my--")
-	testError(t, "myIdentifier-", "Token can not end on hyphen, got myIdentifier-")
+	testError(t, "my--Identifier", "line 1: token can not contain two hyphens in a row, got my--")
+	testError(t, "myIdentifier-", "line 1: token can not end on hyphen, got myIdentifier-")
 }
 
 func TestSpacing(t *testing.T) {
