@@ -1,6 +1,7 @@
 package asn1go
 
 import (
+	"fmt"
 	"github.com/chemikadze/asn1go/internal/utils"
 	"io/ioutil"
 	"os"
@@ -123,7 +124,9 @@ func tryCompileModule(moduleName, module string) error {
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempPath)
+	if os.Getenv("GORBEROS_TEST_KEEP_OUTPUT") == "" {
+		defer os.RemoveAll(tempPath)
+	}
 	// create module
 	filePath, err := renderModule(tempPath, moduleName, module)
 	if err != nil {
@@ -142,17 +145,19 @@ func dryrunModule(moduleName, module string, moduleAst ModuleDefinition, ignores
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tempPath)
+	if os.Getenv("GORBEROS_TEST_KEEP_OUTPUT") == "" {
+		defer os.RemoveAll(tempPath)
+	}
 	// create module
 	_, err = renderModule(tempPath, moduleName, module)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create module: %w", err)
 	}
 	// create driver program
 	driverPath := filepath.Join(tempPath, "main.go")
 	err = renderDriverProgram(driverPath, moduleName, moduleAst, ignores)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to render test program: %w", err)
 	}
 	// test module compiles
 	err = utils.RunCommandForResult("go", "run", driverPath)
@@ -162,7 +167,11 @@ func dryrunModule(moduleName, module string, moduleAst ModuleDefinition, ignores
 	return nil
 }
 
+const Go111Module = "GO111MODULE"
+
 func TestKerberosCompiles(t *testing.T) {
+	defer os.Setenv(Go111Module, os.Getenv(Go111Module))
+	_ = os.Setenv(Go111Module, "off")
 	ast, err := ParseFile("examples/rfc4120.asn1")
 	if err != nil {
 		t.Fatal(err.Error())
@@ -178,6 +187,8 @@ func TestKerberosCompiles(t *testing.T) {
 }
 
 func TestKerberosRuns(t *testing.T) {
+	defer os.Setenv(Go111Module, os.Getenv(Go111Module))
+	_ = os.Setenv(Go111Module, "off")
 	ast, err := ParseFile("examples/rfc4120.asn1")
 	if err != nil {
 		t.Fatal(err.Error())

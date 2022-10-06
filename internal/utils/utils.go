@@ -2,30 +2,22 @@ package utils
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
 )
 
-var runCommandError = `Failed to run program: %v
-stdout:
-
-%v
-
-stderr:
+var runCommandError = `failed to run program %q: %v
+output:
 
 %v
 `
 
 func RunCommandForResult(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-	stdout := bytes.NewBufferString("")
-	stderr := bytes.NewBufferString("")
-	cmd.Stdout, cmd.Stderr = stdout, stderr
-	err := cmd.Run()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf(runCommandError, err.Error(), stdout, stderr))
+		return fmt.Errorf(runCommandError, append([]string{command}, args...), err.Error(), string(out))
 	} else {
 		return nil
 	}
