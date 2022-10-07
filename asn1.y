@@ -258,6 +258,7 @@ import (
 %type <Elements> ValueRange
 %type <Elements> SubtypeElements
 %type <Elements> TypeConstraint
+%type <Elements> InnerTypeConstraints
 %type <Elements> SizeConstraint
 %type <RangeEndpoint> LowerEndpoint UpperEndpoint
 %type <Value> LowerEndValue UpperEndValue
@@ -908,7 +909,7 @@ SubtypeElements : SingleValue
 //                | PermittedAlphabet
                 | SizeConstraint
                 | TypeConstraint
-//                | InnerTypeConstraints
+                | InnerTypeConstraints
 //                | PatternConstraint
 ;
 
@@ -946,6 +947,40 @@ SizeConstraint : SIZE Constraint  { $$ = SizeConstraint{$2} }
 // 47.6.1
 
 TypeConstraint : Type  { $$ = TypeConstraint{$1} }
+;
+
+// 47.8.1
+
+InnerTypeConstraints :  WITH COMPONENT SingleTypeConstraint  { $$ = InnerTypeConstraint{} }
+                     | WITH COMPONENTS MultipleTypeConstraints  { $$ = InnerTypeConstraint{} }
+;
+
+SingleTypeConstraint : Constraint
+;
+
+MultipleTypeConstraints : FullSpecification
+                        | PartialSpecification
+;
+
+FullSpecification : OPEN_CURLY TypeConstraints CLOSE_CURLY
+;
+
+PartialSpecification : OPEN_CURLY ELLIPSIS COMMA TypeConstraints CLOSE_CURLY
+;
+
+TypeConstraints :  NamedConstraint
+                | NamedConstraint COMMA TypeConstraints
+
+NamedConstraint : identifier ComponentConstraint
+;
+
+ComponentConstraint : ValueConstraint PresenceConstraint
+;
+
+ValueConstraint : Constraint | /*empty*/
+;
+
+PresenceConstraint : PRESENT | ABSENT | OPTIONAL | /*empty*/
 ;
 
 // 49.4

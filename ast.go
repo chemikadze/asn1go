@@ -391,7 +391,7 @@ type Constraint struct {
 	//ExceptionSpec ExceptionSpec
 }
 
-// ConstraintSpec can be SubtypeConstraint or GeneralConstraint
+// ConstraintSpec can be SubtypeConstraint or GeneralConstraint.
 type ConstraintSpec interface {
 	IsConstraintSpec()
 }
@@ -437,7 +437,7 @@ func (Exclusions) IsElementSpec() {}
 
 func (Exclusions) IsElements() {}
 
-// Describe elements of Intersections or Exclusions
+// Elements is one of subtype elements (values, type constraints, etc).
 type Elements interface {
 	IsElements()
 }
@@ -480,6 +480,10 @@ type SizeConstraint struct {
 }
 
 func (SizeConstraint) IsElements() {}
+
+type InnerTypeConstraint struct{}
+
+func (InnerTypeConstraint) IsElements() {}
 
 // TODO
 type GeneralConstraint struct{}

@@ -41,7 +41,7 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
 4) Missing ASN features
  - [ ] SET
  - [ ] ANY (1988?)
- - [ ] WITH COMPONENTS
+ - [ ] ENUMERATED
  - [ ] _Add more as found_
 
 ## Adding features
