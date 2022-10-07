@@ -16,7 +16,17 @@ func testExampleParsing(t *testing.T, filename string) *asn1go.ModuleDefinition 
 	if err != nil {
 		t.Fatalf("Failed to parse %v\n\nExpected nil error, got: %v", filename, err.Error())
 	}
-	// TODO(nsokolov): verify that we also can generate from parsed repr
+	/*
+		params := asn1go.GenParams{
+			Package: "testname",
+		}
+		gen := asn1go.NewCodeGenerator(params)
+		output := &bytes.Buffer{}
+		err = gen.Generate(*def, output)
+		if err != nil {
+			t.Fatalf("Failed to generate: %v", err)
+		}
+	*/
 	return def
 }
 
@@ -25,10 +35,12 @@ func TestParseKerberos(t *testing.T) {
 }
 
 func TestParseSNMP(t *testing.T) {
+	// TODO(nsokolov): generation fails
 	testExampleParsing(t, "rfc1157.asn1")
 }
 
 func TestParseSNMPSMI(t *testing.T) {
+	// TODO(nsokolov): generation fails
 	testExampleParsing(t, "rfc1155.asn1")
 }
 
@@ -38,5 +50,6 @@ func TestParseX501(t *testing.T) {
 }
 
 func TestParseLDAP(t *testing.T) {
+	// TODO(nsokolov): generation fails
 	testExampleParsing(t, "rfc4511.asn1")
 }
