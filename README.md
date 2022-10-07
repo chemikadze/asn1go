@@ -29,8 +29,9 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [x] module definition BNF
  - [x] parse Kerberos (rfc4120)
  - [x] yield AST from parser
- - [x] parse SNMPv1 (rfc1157, rfc1155)
- - [x] parse LDAP (rfc4511, partially - required minor modifications)
+ - [x] parse SNMPv1 (rfc1157, rfc1155); no codegen, depends on CHOICE
+ - [x] parse LDAP (rfc4511, partially - required minor modifications); no codegen, depends on CHOICE
+ - [ ] parse X.509 (rfc 5280) - depends on ANY
  - [ ] SNMPv2 (rfc3411–3418)
 3) Code Generator
  - [x] declaration generator
@@ -39,8 +40,9 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [ ] DER serialization generator
  - [ ] DER deserialization generator
 4) Missing ASN features
- - [ ] SET
- - [ ] ANY (1988?)
+ - [ ] SET type (not implemented in parser & generator)
+ - [ ] ANY type (only 1988 standard?) - not supported by encoding/asn1
+ - [ ] CHOICE type - not supported by encoding/asn1
  - [ ] _Add more as found_
 
 ## Adding features
