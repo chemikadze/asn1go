@@ -60,14 +60,13 @@ func (ctx *moduleContext) requireModule(module string) {
 	ctx.requiredModules = append(ctx.requiredModules, module)
 }
 
-/** Generate declarations from module
-
-Feature support status:
- - [x] ModuleIdentifier
- - [ ] TagDefault
- - [ ] ExtensibilityImplied
- - [.] ModuleBody -- see generateDeclarations
-*/
+// Generate declarations from module.
+//
+// Feature support status:
+// - [x] ModuleIdentifier
+// - [ ] TagDefault
+// - [ ] ExtensibilityImplied
+// - [.] ModuleBody -- see generateDeclarations
 func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error {
 	ctx := moduleContext{
 		extensibilityImplied: module.ExtensibilityImplied,
@@ -83,7 +82,7 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 		Decls: ctx.generateDeclarations(module),
 	}
 	if len(ctx.errors) != 0 {
-		msg := "Errors generating Go AST from module: \n"
+		msg := "errors generating Go AST from module: \n"
 		for _, err := range ctx.errors {
 			msg += "  " + err.Error() + "\n"
 		}
@@ -103,14 +102,13 @@ func goifyName(name string) string {
 	return strings.Title(strings.Replace(name, "-", "_", -1))
 }
 
-/** generateDeclarations based on ModuleBody of module
-
-Feature support status:
- - [.] AssignmentList
-   - [ ] ValueAssignment
-   - [x] TypeAssignment
- - [ ] Imports
-*/
+// generateDeclarations based on ModuleBody of module
+//
+// Feature support status:
+// - [.] AssignmentList
+//    - [ ] ValueAssignment
+//    - [x] TypeAssignment
+// - [ ] Imports
 func (ctx *moduleContext) generateDeclarations(module ModuleDefinition) []goast.Decl {
 	decls := make([]goast.Decl, 0)
 	for _, assignment := range module.ModuleBody.AssignmentList {
@@ -188,7 +186,7 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		// ObjectIdentifierType
 		// ChoiceType
 		// RestrictedStringType
-		ctx.appendError(errors.New(fmt.Sprintf("Ignoring unsupported type %#v", typeDescr)))
+		ctx.appendError(fmt.Errorf("ignoring unsupported type %#v", typeDescr))
 		return nil
 	}
 }
@@ -227,7 +225,7 @@ unwrap:
 			case Number:
 				components = append(components, fmt.Sprintf("tag:%v", cn.IntValue()))
 			default:
-				ctx.appendError(errors.New(fmt.Sprintf("Tag value should be Number, got %#v", cn)))
+				ctx.appendError(fmt.Errorf("tag value should be Number, got %#v", cn))
 			}
 			t = tt.Type
 		case ConstraintedType:
@@ -294,7 +292,7 @@ func (ctx *moduleContext) resolveTypeReference(reference TypeReference) *TypeAss
 	} else if tt := ctx.lookupUsefulType(unwrapped.TypeReference); tt != nil {
 		return &TypeAssignment{unwrapped.TypeReference, tt}
 	} else {
-		ctx.appendError(errors.New(fmt.Sprintf("Can not resolve TypeReference %v", reference.Name())))
+		ctx.appendError(fmt.Errorf("can not resolve TypeReference %v", reference.Name()))
 		return nil
 	}
 }
