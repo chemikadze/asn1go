@@ -215,6 +215,7 @@ import (
 %type <Type> BuiltinType
 %type <Type> Type
 %type <Type> NullType
+%type <Type> EnumeratedType
 %type <NamedType> NamedType
 %type <ObjIdComponents> ObjIdComponents
 %type <ObjIdComponents> NumberForm
@@ -477,7 +478,7 @@ BuiltinType : BitStringType
             | CharacterStringType
             | ChoiceType
 //            | EmbeddedPDVType
-//            | EnumeratedType
+            | EnumeratedType
 //            | ExternalType
 //            | InstanceOfType
             | IntegerType
@@ -570,6 +571,29 @@ SignedNumber : NUMBER  { $$ = $1 }
 
 IntegerValue : SignedNumber  { $$ = $1 }
              | identifier  { $$ = IdentifiedIntegerValue{Name: $1} }
+;
+
+// 19.1
+
+EnumeratedType : ENUMERATED OPEN_CURLY Enumerations CLOSE_CURLY  { $$ = EnumeratedType{} }
+;
+
+Enumerations : RootEnumeration
+             | RootEnumeration COMMA ELLIPSIS ExceptionSpec
+             | RootEnumeration COMMA ELLIPSIS ExceptionSpec COMMA AdditionalEnumeration
+
+RootEnumeration : Enumeration
+;
+
+AdditionalEnumeration : Enumeration
+;
+
+Enumeration : EnumerationItem
+            | EnumerationItem COMMA Enumeration
+;
+
+EnumerationItem : NamedNumber
+                | identifier
 ;
 
 // 20.1

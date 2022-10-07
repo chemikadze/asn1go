@@ -1,5 +1,7 @@
 package asn1go
 
+import "encoding/asn1"
+
 type AstNode interface{}
 
 type ModuleDefinition struct {
@@ -234,6 +236,13 @@ type IntegerType struct {
 
 func (IntegerType) Zero() interface{} {
 	return 0
+}
+
+type EnumeratedType struct {
+}
+
+func (EnumeratedType) Zero() interface{} {
+	return asn1.Enumerated(0)
 }
 
 // real

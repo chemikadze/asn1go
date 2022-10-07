@@ -180,6 +180,9 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case BitStringType:
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.BitString")
+	case EnumeratedType:
+		ctx.requireModule("encoding/asn1")
+		return goast.NewIdent("asn1.Enumerated")
 	default:
 		// NullType
 		// ObjectIdentifierType

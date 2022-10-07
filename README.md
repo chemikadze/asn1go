@@ -30,7 +30,7 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [x] parse Kerberos (rfc4120)
  - [x] yield AST from parser
  - [x] parse SNMPv1 (rfc1157, rfc1155)
- - [ ] parse LDAP (rfc4511) 
+ - [x] parse LDAP (rfc4511, partially - required minor modifications)
  - [ ] SNMPv2 (rfc3411–3418)
 3) Code Generator
  - [x] declaration generator
@@ -41,7 +41,6 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
 4) Missing ASN features
  - [ ] SET
  - [ ] ANY (1988?)
- - [ ] ENUMERATED
  - [ ] _Add more as found_
 
 ## Adding features
