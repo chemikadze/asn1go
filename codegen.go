@@ -145,17 +145,9 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case OctetStringType:
 		return &goast.ArrayType{Elt: goast.NewIdent("byte")}
 	case SequenceType:
-		fields := &goast.FieldList{}
-		for _, field := range t.Components {
-			switch f := field.(type) {
-			case NamedComponentType:
-				fields.List = append(fields.List, ctx.generateStructField(f))
-			case ComponentsOfComponentType: // TODO
-			}
-		}
-		return &goast.StructType{
-			Fields: fields,
-		}
+		return ctx.structFromComponents(t.Components)
+	case SetType:
+		return ctx.structFromComponents(t.Components)
 	case SequenceOfType:
 		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
 	case SetOfType:
@@ -181,13 +173,31 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case EnumeratedType:
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.Enumerated")
+	case AnyType:
+		return &goast.InterfaceType{}
+	case ObjectIdentifierType:
+		ctx.requireModule("encoding/asn1")
+		return goast.NewIdent("asn1.ObjectIdentifier")
 	default:
 		// NullType
-		// ObjectIdentifierType
 		// ChoiceType
 		// RestrictedStringType
 		ctx.appendError(fmt.Errorf("ignoring unsupported type %#v", typeDescr))
 		return nil
+	}
+}
+
+func (ctx *moduleContext) structFromComponents(components ComponentTypeList) goast.Expr {
+	fields := &goast.FieldList{}
+	for _, field := range components {
+		switch f := field.(type) {
+		case NamedComponentType:
+			fields.List = append(fields.List, ctx.generateStructField(f))
+		case ComponentsOfComponentType: // TODO
+		}
+	}
+	return &goast.StructType{
+		Fields: fields,
 	}
 }
 
@@ -245,6 +255,10 @@ unwrap:
 		case PrintableString:
 			components = append(components, "printable")
 		}
+	case SetType:
+		components = append(components, "set")
+	case SetOfType:
+		components = append(components, "set")
 	case TypeReference:
 		switch ctx.unwrapToLeafType(tt).TypeReference.Name() {
 		case GeneralizedTimeName:
@@ -253,7 +267,7 @@ unwrap:
 			components = append(components, "utc")
 		}
 		// TODO set          causes a SET, rather than a SEQUENCE type to be expected
-		// TODO omitempty    causes empty slices to be skipped
+		// TODO omitempty    causes empty slices to be skipped\
 	}
 	if len(components) > 0 {
 		return &goast.BasicLit{

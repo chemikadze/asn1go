@@ -192,6 +192,10 @@ import (
 %token INSTANCE
 %token REAL
 %token WITH
+// X.208-specific
+%token ANY
+%token DEFINED
+// When adding new reserved words, make sure to update lexer.go.
 
 %type <Real> realnumber
 %type <Number> SignedExponent
@@ -216,6 +220,7 @@ import (
 %type <Type> Type
 %type <Type> NullType
 %type <Type> EnumeratedType
+%type <Type> AnyType
 %type <NamedType> NamedType
 %type <ObjIdComponents> ObjIdComponents
 %type <ObjIdComponents> NumberForm
@@ -267,6 +272,7 @@ import (
 %type <Type> DefinedType ReferencedType
 %type <Type> SequenceType
 %type <Type> SequenceOfType
+%type <Type> SetType
 %type <Type> SetOfType
 %type <ComponentType> ComponentType
 %type <ComponentTypeList> ComponentTypeList
@@ -490,8 +496,10 @@ BuiltinType : BitStringType
 //            | RelativeOIDType
             | SequenceType
             | SequenceOfType
-//            | SetType
+            | SetType
             | SetOfType
+// modification - taken from X.208
+            | AnyType
             | TaggedType
 ;
 
@@ -707,10 +715,22 @@ ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
               | COMPONENTS OF Type  { $$ = ComponentsOfComponentType{Type: $3} }
 ;
 
+// 26.1
+
+SetType :  SET OPEN_CURLY CLOSE_CURLY  { $$ = SetType{} }
+        |  SET OPEN_CURLY ExtensionAndException OptionalExtensionMarker CLOSE_CURLY  { $$ = SetType{} }
+        |  SET OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SetType{Components: $3} }
+
+
 // 27.1
 
 SetOfType : SET OF Type  { $$ = SetOfType{$3} }
           | SET OF NamedType  { $$ = SetOfType{$3} }
+
+// 27.1 from x.208
+
+AnyType : ANY  { $$ = AnyType{} }
+        | ANY DEFINED BY identifier  { $$ = AnyType{Identifier($4)} }
 
 // 28.1
 

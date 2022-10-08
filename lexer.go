@@ -92,6 +92,8 @@ var (
 		"INSTANCE":         INSTANCE,
 		"REAL":             REAL,
 		"WITH":             WITH,
+		"ANY":              ANY,
+		"DEFINED":          DEFINED,
 	}
 )
 

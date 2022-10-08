@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func testNotFails(t *testing.T, str string) *ModuleDefinition {
@@ -485,5 +487,21 @@ func TestBooleanValues(t *testing.T) {
 	// quick and dirty
 	if es, ps := fmt.Sprintf("%+v", r.ModuleBody.AssignmentList), fmt.Sprintf("%+v", expectedDecls); es != ps {
 		t.Errorf("Repr mismatch:\n exp: %v\n got: %v", es, ps)
+	}
+}
+
+func TestAnyType(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		AttributeValue ::= ANY
+		AttributeValue2 ::= ANY DEFINED BY something
+	END`
+	expectedDecls := AssignmentList{
+		TypeAssignment{TypeReference: "AttributeValue", Type: AnyType{}},
+		TypeAssignment{TypeReference: "AttributeValue2", Type: AnyType{"something"}},
+	}
+	r := testNotFails(t, content)
+	if diff := cmp.Diff(expectedDecls, r.ModuleBody.AssignmentList); diff != "" {
+		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
 	}
 }

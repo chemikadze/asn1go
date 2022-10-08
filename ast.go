@@ -330,6 +330,15 @@ type ComponentsOfComponentType struct {
 
 func (ComponentsOfComponentType) IsComponentType() {}
 
+// TODO Extensions are not supported
+type SetType struct {
+	Components ComponentTypeList
+}
+
+func (SetType) Zero() interface{} {
+	return nil
+}
+
 // tagged types
 type TaggedType struct {
 	Tag        Tag
@@ -368,6 +377,15 @@ type SetOfType struct {
 
 func (SetOfType) Zero() interface{} {
 	return make([]interface{}, 0)
+}
+
+type AnyType struct {
+	// Identifier is set if IDENTIFIED BY is provided.
+	Identifier Identifier
+}
+
+func (AnyType) Zero() interface{} {
+	return nil
 }
 
 // BIT STRING with optional named bits

@@ -56,9 +56,9 @@ func TestParseSNMPSMI(t *testing.T) {
 }
 
 func TestParseX509(t *testing.T) {
-	t.Skip("Fails parsing because ANY is not supported")
 	defs := testExampleParsing(t, "rfc5280.asn1")
 	t.Run("generation", func(t *testing.T) {
+		t.Skip("CHOICE type is not supported by encoding/asn1")
 		testGeneration(t, defs)
 	})
 }

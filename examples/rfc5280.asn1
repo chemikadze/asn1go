@@ -66,7 +66,7 @@ Attribute               ::= SEQUENCE {
 
 AttributeType           ::= OBJECT IDENTIFIER
 
-AttributeValue          ::= ANY -- DEFINED BY AttributeType
+AttributeValue          ::= ANY /*DEFINED BY AttributeType*/  -- TODO(nsokolov): DEFINED BY does not work
 
 AttributeTypeAndValue   ::= SEQUENCE {
         type    AttributeType,
