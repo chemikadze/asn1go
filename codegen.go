@@ -68,6 +68,10 @@ func (ctx *moduleContext) requireModule(module string) {
 // - [ ] ExtensibilityImplied
 // - [.] ModuleBody -- see generateDeclarations
 func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error {
+	if module.TagDefault == TAGS_AUTOMATIC {
+		// See x.680, section 12.3. It implies certain transformations to component and alternative lists that are not implemented.
+		return errors.New("AUTOMATIC tagged modules are not supported")
+	}
 	ctx := moduleContext{
 		extensibilityImplied: module.ExtensibilityImplied,
 		tagDefault:           module.TagDefault,
