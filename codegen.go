@@ -225,8 +225,11 @@ unwrap:
 	for {
 		switch tt := t.(type) {
 		case TaggedType:
-			if tt.Tag.Class == CLASS_APPLICATION {
+			switch tt.Tag.Class {
+			case CLASS_APPLICATION:
 				components = append(components, "application")
+			case CLASS_PRIVATE:
+				components = append(components, "private")
 			}
 			if tt.TagType == TAGS_EXPLICIT {
 				components = append(components, "explicit")
