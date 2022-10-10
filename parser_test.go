@@ -505,3 +505,23 @@ func TestAnyType(t *testing.T) {
 		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
 	}
 }
+
+func TestDefaultTags(t *testing.T) {
+	content := `
+	TestSpec DEFINITIONS ::= BEGIN
+		UnTagged ::= BOOLEAN
+		DefaultTagged ::= [1] BOOLEAN
+		ExplicitTagged ::= [2] EXPLICIT BOOLEAN
+		ImplicitTagged ::= [3] IMPLICIT BOOLEAN
+	END`
+	expectedDecls := AssignmentList{
+		TypeAssignment{TypeReference: "UnTagged", Type: BooleanType{}},
+		TypeAssignment{TypeReference: "DefaultTagged", Type: TaggedType{Type: BooleanType{}, Tag: Tag{ClassNumber: Number(1)}, HasTagType: false}},
+		TypeAssignment{TypeReference: "ExplicitTagged", Type: TaggedType{Type: BooleanType{}, Tag: Tag{ClassNumber: Number(2)}, HasTagType: true, TagType: TAGS_EXPLICIT}},
+		TypeAssignment{TypeReference: "ImplicitTagged", Type: TaggedType{Type: BooleanType{}, Tag: Tag{ClassNumber: Number(3)}, HasTagType: true, TagType: TAGS_IMPLICIT}},
+	}
+	r := testNotFails(t, content)
+	if diff := cmp.Diff(expectedDecls, r.ModuleBody.AssignmentList); diff != "" {
+		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+	}
+}

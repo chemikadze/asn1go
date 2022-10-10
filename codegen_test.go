@@ -2,6 +2,7 @@ package asn1go
 
 import (
 	"bytes"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 )
 
@@ -154,6 +155,103 @@ type MySequence struct {
 	if got != expected {
 		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
 	}
+}
+
+func TestTagType(t *testing.T) {
+	testCases := []struct {
+		name      string
+		asnModule string
+		goModule  string
+	}{
+		{
+			name: "default (explicit)",
+			asnModule: `
+	TestSpec DEFINITIONS ::= BEGIN
+		Struct ::= SEQUENCE {
+			untagged BOOLEAN,
+			default [1] BOOLEAN,
+			explicit [2] EXPLICIT BOOLEAN,
+			implicit [3] IMPLICIT BOOLEAN
+		}
+	END
+	`,
+			goModule: `package TestSpec
+
+type Struct struct {
+	Untagged	bool
+	Default		bool	` + "`asn1:\"explicit,tag:1\"`" + `
+	Explicit	bool	` + "`asn1:\"explicit,tag:2\"`" + `
+	Implicit	bool	` + "`asn1:\"tag:3\"`" + `
+}
+`,
+		},
+		{
+			name: "module explicit tags",
+			asnModule: `
+	TestSpec DEFINITIONS EXPLICIT TAGS ::= BEGIN
+		Struct ::= SEQUENCE {
+			untagged BOOLEAN,
+			default [1] BOOLEAN,
+			explicit [2] EXPLICIT BOOLEAN,
+			implicit [3] IMPLICIT BOOLEAN
+		}
+	END
+	`,
+			goModule: `package TestSpec
+
+type Struct struct {
+	Untagged	bool
+	Default		bool	` + "`asn1:\"explicit,tag:1\"`" + `
+	Explicit	bool	` + "`asn1:\"explicit,tag:2\"`" + `
+	Implicit	bool	` + "`asn1:\"tag:3\"`" + `
+}
+`,
+		},
+		{
+			name: "module implicit tags",
+			asnModule: `
+	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+		Struct ::= SEQUENCE {
+			untagged BOOLEAN,
+			default [1] BOOLEAN,
+			explicit [2] EXPLICIT BOOLEAN,
+			implicit [3] IMPLICIT BOOLEAN
+		}
+	END
+	`,
+			goModule: `package TestSpec
+
+type Struct struct {
+	Untagged	bool
+	Default		bool	` + "`asn1:\"tag:1\"`" + `
+	Explicit	bool	` + "`asn1:\"explicit,tag:2\"`" + `
+	Implicit	bool	` + "`asn1:\"tag:3\"`" + `
+}
+`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := parseModule(t, tc.asnModule)
+			expected := tc.goModule
+			got, err := generateDeclarationsString(*m)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err.Error())
+			}
+			if diff := cmp.Diff(expected, got); diff != "" {
+				t.Errorf("Generated module did not match expected, diff (-want, +got): %v", diff)
+			}
+		})
+	}
+
+}
+
+func parseModule(t *testing.T, s string) *ModuleDefinition {
+	def, err := ParseString(s)
+	if err != nil {
+		t.Fatalf("Failed to parse module: %v", err)
+	}
+	return def
 }
 
 func TestTime(t *testing.T) {

@@ -235,8 +235,16 @@ unwrap:
 			case CLASS_PRIVATE:
 				components = append(components, "private")
 			}
-			if tt.TagType == TAGS_EXPLICIT {
+			tagType := ctx.tagDefault
+			if tt.HasTagType {
+				tagType = tt.TagType
+			}
+			switch tagType {
+			case TAGS_EXPLICIT:
 				components = append(components, "explicit")
+			case TAGS_IMPLICIT: // nothing to do
+			case TAGS_AUTOMATIC:
+				ctx.appendError(fmt.Errorf("type %v: AUTOMATIC tags are not supported", nt.NamedType.Identifier))
 			}
 			switch cn := ctx.lookupValue(tt.Tag.ClassNumber).(type) {
 			case Number:
