@@ -56,18 +56,18 @@ func TestDeclPrimitiveTypesSyntax(t *testing.T) {
 	}
 	expected := `package My_ASN1_ModuleName
 
-type MyBool bool
-type MyInt int64
-type MyString string
-type MyOctetString []byte
-type MyReal float64
+type MyBool = bool
+type MyInt = int64
+type MyString = string
+type MyOctetString = []byte
+type MyReal = float64
 `
 	got, err := generateDeclarationsString(m)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if got != expected {
-		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
+	if diff := cmp.Diff(got, expected); diff != "" {
+		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
 
@@ -119,8 +119,8 @@ func TestDeclSequenceOFTypeSyntax(t *testing.T) {
 	})
 	expected := `package My_ASN1_ModuleName
 
-type MySequenceOfInt []int64
-type MySequenceOfSequence []struct {
+type MySequenceOfInt = []int64
+type MySequenceOfSequence = []struct {
 	MyIntField int64
 }
 `
@@ -128,8 +128,8 @@ type MySequenceOfSequence []struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if got != expected {
-		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
+	if diff := cmp.Diff(got, expected); diff != "" {
+		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
 
@@ -268,7 +268,7 @@ func TestTime(t *testing.T) {
 
 import "time"
 
-type MyTimeType time.Time
+type MyTimeType = time.Time
 type MySequence struct {
 	MyTimeField time.Time ` + "`asn1:\"generalized\"`" + `
 }
@@ -277,8 +277,8 @@ type MySequence struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if got != expected {
-		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
+	if diff := cmp.Diff(got, expected); diff != "" {
+		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
 
@@ -318,8 +318,8 @@ func TestBitString(t *testing.T) {
 
 import "encoding/asn1"
 
-type MyBitStringType asn1.BitString
-type MyNestedBitStringType asn1.BitString
+type MyBitStringType = asn1.BitString
+type MyNestedBitStringType = asn1.BitString
 type MySequence struct {
 	MyNestedBitStringField	asn1.BitString
 	MyBitStringField	asn1.BitString
@@ -330,7 +330,7 @@ type MySequence struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if got != expected {
-		t.Errorf("Output did not match\n\nExp:\n`%v`\n\nGot:\n`%v`", expected, got)
+	if diff := cmp.Diff(got, expected); diff != "" {
+		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }

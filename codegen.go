@@ -125,14 +125,17 @@ func (ctx *moduleContext) generateDeclarations(module ModuleDefinition) []goast.
 }
 
 func (ctx *moduleContext) generateTypeDecl(reference TypeReference, typeDescr Type) goast.Decl {
+	typeBody := ctx.generateTypeBody(typeDescr)
+	spec := &goast.TypeSpec{
+		Name: goast.NewIdent(goifyName(reference.Name())),
+		Type: typeBody,
+	}
+	if _, ok := typeBody.(*goast.StructType); !ok {
+		spec.Assign = 1 // not a valid Pos, but formatter just needs non-empty value
+	}
 	return &goast.GenDecl{
-		Tok: gotoken.TYPE,
-		Specs: []goast.Spec{
-			&goast.TypeSpec{
-				Name: goast.NewIdent(goifyName(reference.Name())),
-				Type: ctx.generateTypeBody(typeDescr),
-			},
-		},
+		Tok:   gotoken.TYPE,
+		Specs: []goast.Spec{spec},
 	}
 }
 
