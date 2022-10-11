@@ -125,21 +125,35 @@ func (ctx *moduleContext) generateDeclarations(module ModuleDefinition) []goast.
 }
 
 func (ctx *moduleContext) generateTypeDecl(reference TypeReference, typeDescr Type) goast.Decl {
-	typeBody := ctx.generateTypeBody(typeDescr)
+	var isSet bool
+	typeBody := ctx.generateTypeBody(typeDescr, &isSet)
 	spec := &goast.TypeSpec{
-		Name: goast.NewIdent(goifyName(reference.Name())),
-		Type: typeBody,
+		Name:   goast.NewIdent(goifyName(reference.Name())),
+		Type:   typeBody,
+		Assign: 1, // not a valid Pos, but formatter just needs non-empty value
 	}
-	if _, ok := typeBody.(*goast.StructType); !ok {
-		spec.Assign = 1 // not a valid Pos, but formatter just needs non-empty value
-	}
-	return &goast.GenDecl{
+	decl := &goast.GenDecl{
 		Tok:   gotoken.TYPE,
 		Specs: []goast.Spec{spec},
 	}
+	if _, ok := typeBody.(*goast.StructType); ok {
+		spec.Assign = 0
+	}
+	if isSet {
+		oldName := spec.Name.Name
+		spec.Name.Name += "SET"
+		spec.Assign = 0
+		newName := spec.Name.Name
+		decl.Specs = append(decl.Specs, &goast.TypeSpec{
+			Name:   goast.NewIdent(oldName),
+			Assign: 1,
+			Type:   goast.NewIdent(newName),
+		})
+	}
+	return decl
 }
 
-func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
+func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Expr {
 	switch t := typeDescr.(type) {
 	case BooleanType:
 		return goast.NewIdent("bool")
@@ -154,15 +168,17 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 	case SequenceType:
 		return ctx.structFromComponents(t.Components)
 	case SetType:
+		*isSet = true
 		return ctx.structFromComponents(t.Components)
 	case SequenceOfType:
-		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
+		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type, isSet)}
 	case SetOfType:
-		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type)}
+		*isSet = true
+		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type, isSet)}
 	case TaggedType: // TODO should put tags in go code?
-		return ctx.generateTypeBody(t.Type)
+		return ctx.generateTypeBody(t.Type, isSet)
 	case ConstraintedType: // TODO should generate checking code?
-		return ctx.generateTypeBody(t.Type)
+		return ctx.generateTypeBody(t.Type, isSet)
 	case TypeReference: // TODO should useful types be separate type by itself?
 		nameAndType := ctx.resolveTypeReference(t)
 		if nameAndType != nil {
@@ -181,16 +197,55 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type) goast.Expr {
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.Enumerated")
 	case AnyType:
-		return &goast.InterfaceType{}
+		return &goast.InterfaceType{Methods: &goast.FieldList{}}
 	case ObjectIdentifierType:
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.ObjectIdentifier")
+	case ChoiceType:
+		return ctx.generateChoiceType(t, isSet)
 	default:
 		// NullType
-		// ChoiceType
-		// RestrictedStringType
 		ctx.appendError(fmt.Errorf("ignoring unsupported type %#v", typeDescr))
 		return nil
+	}
+}
+
+func (ctx *moduleContext) generateChoiceType(t ChoiceType, isSet *bool) goast.Expr {
+	if ctx.hasTaggedAlternatives(t) {
+		return goast.NewIdent("asn1.RawValue")
+	}
+	if len(t.AlternativeTypeList) == 1 {
+		return ctx.generateTypeBody(t.AlternativeTypeList[0].Type, isSet) // optimization for X.509 edge case
+	}
+	return &goast.InterfaceType{Methods: &goast.FieldList{}}
+}
+
+func (ctx *moduleContext) hasTaggedAlternatives(t ChoiceType) bool {
+	for _, f := range t.AlternativeTypeList {
+		if ctx.taggedChoiceTypeAlternative(f.Identifier, f.Type) {
+			return true
+		}
+	}
+	return false
+}
+
+func (ctx *moduleContext) taggedChoiceTypeAlternative(name Identifier, t Type) bool {
+	switch t := t.(type) {
+	case TaggedType:
+		return true
+	case TypeReference:
+		if t.Name() == GeneralizedTimeName || t.Name() == UTCTimeName {
+			return false
+		}
+		realType := ctx.resolveTypeReference(t)
+		if realType == nil {
+			return false
+		}
+		return ctx.taggedChoiceTypeAlternative(name, realType.Type)
+	case ConstraintedType:
+		return ctx.taggedChoiceTypeAlternative(name, t.Type)
+	default:
+		return false
 	}
 }
 
@@ -209,9 +264,10 @@ func (ctx *moduleContext) structFromComponents(components ComponentTypeList) goa
 }
 
 func (ctx *moduleContext) generateStructField(f NamedComponentType) *goast.Field {
+	var stubBool bool // we care about isSet / shouldAssign only for top-level decls
 	return &goast.Field{
 		Names: append(make([]*goast.Ident, 0), goast.NewIdent(goifyName(f.NamedType.Identifier.Name()))),
-		Type:  ctx.generateTypeBody(f.NamedType.Type),
+		Type:  ctx.generateTypeBody(f.NamedType.Type, &stubBool),
 		Tag:   ctx.asn1TagFromType(f),
 	}
 }

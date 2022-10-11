@@ -66,7 +66,7 @@ type MyReal = float64
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if diff := cmp.Diff(got, expected); diff != "" {
+	if diff := cmp.Diff(expected, got); diff != "" {
 		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
@@ -128,7 +128,7 @@ type MySequenceOfSequence = []struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if diff := cmp.Diff(got, expected); diff != "" {
+	if diff := cmp.Diff(expected, got); diff != "" {
 		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
@@ -277,7 +277,7 @@ type MySequence struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if diff := cmp.Diff(got, expected); diff != "" {
+	if diff := cmp.Diff(expected, got); diff != "" {
 		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
@@ -330,7 +330,7 @@ type MySequence struct {
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err.Error())
 	}
-	if diff := cmp.Diff(got, expected); diff != "" {
+	if diff := cmp.Diff(expected, got); diff != "" {
 		t.Errorf("Output did not match expected, diff (-want, +got): %v", diff)
 	}
 }
