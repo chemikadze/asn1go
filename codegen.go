@@ -226,6 +226,9 @@ func (ctx *moduleContext) asn1TagFromType(nt NamedComponentType) *goast.BasicLit
 		if defaultNumber, ok := (*nt.Default).(Number); ok {
 			components = append(components, fmt.Sprintf("default:%v", defaultNumber.IntValue()))
 		}
+		if !nt.IsOptional { // ensure it's marked as optional
+			components = append(components, "optional")
+		}
 	}
 	// unwrap type
 unwrap:
