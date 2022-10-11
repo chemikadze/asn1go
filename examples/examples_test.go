@@ -42,7 +42,7 @@ func TestParseKerberos(t *testing.T) {
 func TestParseSNMP(t *testing.T) {
 	defs := testExampleParsing(t, "rfc1157.asn1")
 	t.Run("generation", func(t *testing.T) {
-		t.Skip("CHOICE type is not supported by encoding/asn1")
+		t.Skip("Missing type references")
 		testGeneration(t, defs)
 	})
 }
@@ -50,7 +50,6 @@ func TestParseSNMP(t *testing.T) {
 func TestParseSNMPSMI(t *testing.T) {
 	defs := testExampleParsing(t, "rfc1155.asn1")
 	t.Run("generation", func(t *testing.T) {
-		t.Skip("CHOICE type is not supported by encoding/asn1")
 		testGeneration(t, defs)
 	})
 }
@@ -58,7 +57,6 @@ func TestParseSNMPSMI(t *testing.T) {
 func TestParseX509(t *testing.T) {
 	defs := testExampleParsing(t, "rfc5280.asn1")
 	t.Run("generation", func(t *testing.T) {
-		t.Skip("CHOICE type is not supported by encoding/asn1")
 		testGeneration(t, defs)
 	})
 }
@@ -66,7 +64,7 @@ func TestParseX509(t *testing.T) {
 func TestParseLDAP(t *testing.T) {
 	defs := testExampleParsing(t, "rfc4511.asn1")
 	t.Run("generation", func(t *testing.T) {
-		t.Skip("CHOICE type is not supported by encoding/asn1")
+		t.Skip("Missing named types and NULL")
 		testGeneration(t, defs)
 	})
 }
