@@ -15,9 +15,10 @@ type CodeGenerator interface {
 }
 
 type GenParams struct {
-	Package string
-	Prefix  string
-	Type    GenType
+	Package     string
+	Prefix      string
+	Type        GenType
+	IntegerRepr IntegerRepr
 }
 
 type GenType int
@@ -26,7 +27,17 @@ const (
 	GEN_DECLARATIONS GenType = iota
 )
 
+type IntegerRepr string
+
+const (
+	IntegerReprInt64  IntegerRepr = "int64"
+	IntegerReprBigInt IntegerRepr = "big.Int"
+)
+
 func NewCodeGenerator(params GenParams) CodeGenerator {
+	if params.IntegerRepr == "" {
+		params.IntegerRepr = IntegerReprInt64
+	}
 	switch params.Type {
 	case GEN_DECLARATIONS:
 		return &declCodeGen{params}
@@ -45,6 +56,7 @@ type moduleContext struct {
 	errors               []error
 	lookupContext        ModuleBody
 	requiredModules      []string
+	params               GenParams
 }
 
 func (ctx *moduleContext) appendError(err error) {
@@ -76,6 +88,7 @@ func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error
 		extensibilityImplied: module.ExtensibilityImplied,
 		tagDefault:           module.TagDefault,
 		lookupContext:        module.ModuleBody,
+		params:               gen.Params,
 	}
 	moduleName := goast.NewIdent(goifyName(module.ModuleIdentifier.Reference))
 	if len(gen.Params.Package) > 0 {
@@ -158,7 +171,16 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Ex
 	case BooleanType:
 		return goast.NewIdent("bool")
 	case IntegerType:
-		return goast.NewIdent("int64") // TODO signed, unsigned, range constraints
+		switch ctx.params.IntegerRepr {
+		case IntegerReprInt64:
+			return goast.NewIdent("int64") // TODO signed, unsigned, range constraints
+		case IntegerReprBigInt:
+			ctx.requireModule("math/big")
+			return &goast.StarExpr{X: goast.NewIdent("big.Int")}
+		default:
+			ctx.appendError(fmt.Errorf("unknown int type mode: %v", ctx.params.IntegerRepr))
+			return goast.NewIdent("int64")
+		}
 	case CharacterStringType:
 		return goast.NewIdent("string")
 	case RealType:

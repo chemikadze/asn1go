@@ -16,9 +16,10 @@ reads from stdin.
 `
 
 type flagsType struct {
-	inputName   string
-	outputName  string
-	packageName string
+	inputName      string
+	outputName     string
+	packageName    string
+	defaultIntRepr string
 }
 
 func failWithError(format string, args ...interface{}) {
@@ -30,6 +31,7 @@ func failWithError(format string, args ...interface{}) {
 func parseFlags(args []string) (res flagsType) {
 	cmd := flag.NewFlagSet(args[0], flag.ExitOnError)
 	cmd.StringVar(&res.packageName, "package", "", "package name for generated code")
+	cmd.StringVar(&res.defaultIntRepr, "default-integer-repr", "int64", "Type for numeric types (int64, big.Int)")
 	cmd.Parse(args[1:])
 	if cmd.NArg() > 0 {
 		res.inputName = cmd.Arg(0)
@@ -74,7 +76,8 @@ func main() {
 		failWithError(err.Error())
 	}
 	params := asn1go.GenParams{
-		Package: flags.packageName,
+		Package:     flags.packageName,
+		IntegerRepr: asn1go.IntegerRepr(flags.defaultIntRepr),
 	}
 	gen := asn1go.NewCodeGenerator(params)
 	err = gen.Generate(*module, output)
