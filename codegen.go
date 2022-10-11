@@ -267,8 +267,10 @@ unwrap:
 			components = append(components, "ia5")
 		case UTF8String:
 			components = append(components, "utf8")
+		case NumericString:
+			components = append(components, "numeric")
 		case PrintableString:
-			components = append(components, "printable")
+			// default type
 		}
 	case SetType:
 		components = append(components, "set")
@@ -281,7 +283,6 @@ unwrap:
 		case UTCTimeName:
 			components = append(components, "utc")
 		}
-		// TODO set          causes a SET, rather than a SEQUENCE type to be expected
 		// TODO omitempty    causes empty slices to be skipped\
 	}
 	if len(components) > 0 {
