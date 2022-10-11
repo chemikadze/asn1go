@@ -58,6 +58,9 @@ func openChannels(inputName, outputName string) (input, output *os.File) {
 		if err != nil {
 			failWithError("File %v can not be written: %v", inputName, err.Error())
 		}
+		if err := output.Truncate(0); err != nil {
+			failWithError("Failed to truncate file: %v", err.Error())
+		}
 	}
 	return input, output
 }
