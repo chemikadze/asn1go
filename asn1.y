@@ -642,7 +642,7 @@ BitStringType : BIT STRING  { $$ = BitStringType{} }
 ;
 
 NamedBitList : NamedBit  { $$ = append(make([]NamedBit, 0), $1) }
-             | NamedBitList "," NamedBit  { $$ = append($1, $3) }
+             | NamedBitList COMMA NamedBit  { $$ = append($1, $3) }
 ;
 
 NamedBit : identifier OPEN_ROUND number CLOSE_ROUND  { $$ = NamedBit{Name: Identifier($1), Index: $3} }
