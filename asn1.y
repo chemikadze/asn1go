@@ -673,14 +673,16 @@ ExtensionAndException : ELLIPSIS
 OptionalExtensionMarker : COMMA ELLIPSIS | /*empty*/
 ;
 
-// TODO Extensions are not supported
-ComponentTypeLists : RootComponentTypeList
-//                   | RootComponentTypeList "," ExtensionAndException ExtensionAdditions OptionalExtensionMarker
-//                   | RootComponentTypeList "," ExtensionAndException ExtensionAdditions ExtensionEndMarker "," RootComponentTypeList
+// TODO Extensions are not fully supported, extension information will be ignored.
+// Edited from the doc - ComponentTypeList used directly instead of RootComponentTypeList to avoid ambiguity around COMMA.
+ComponentTypeLists : ComponentTypeList
+                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions OptionalExtensionMarker
+                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions ExtensionEndMarker COMMA ComponentTypeList  { $$ = append($1, $7...) }
 //                   | ExtensionAndException ExtensionAdditions ExtensionEndMarker "," RootComponentTypeList
 //                   | ExtensionAndException ExtensionAdditions OptionalExtensionMarker
 ;
 
+// Unused, as it generates ambiguity around COMMA in ComponentTypeLists
 RootComponentTypeList : ComponentTypeList
 ;
 

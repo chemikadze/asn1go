@@ -530,7 +530,7 @@ func TestSequenceSyntax(t *testing.T) {
 	testCases := []struct {
 		name       string
 		content    string
-		expected   Type
+		expected   AssignmentList
 		skipReason string
 	}{
 		{
@@ -540,37 +540,88 @@ func TestSequenceSyntax(t *testing.T) {
 				Sequence ::= SEQUENCE { }
 			END
 			`,
-			expected: SequenceType{},
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Sequence", Type: SequenceType{}},
+			},
 		},
 		{
 			name: "simple sequence",
 			content: `
 			TestSpec DEFINITIONS ::= BEGIN
-				Sequence ::= SEQUENCE {
+				Sequence1 ::= SEQUENCE {
+					field BOOLEAN
+                }		
+				Sequence2 ::= SEQUENCE {
 					field1 BOOLEAN,
 					field2 BOOLEAN
                 }
 			END
 			`,
-			expected: SequenceType{Components: ComponentTypeList{
-				NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
-				NamedComponentType{NamedType: NamedType{Identifier: "field2", Type: BooleanType{}}},
-			}},
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Sequence1", Type: SequenceType{Components: ComponentTypeList{
+					NamedComponentType{NamedType: NamedType{Identifier: "field", Type: BooleanType{}}},
+				}}},
+				TypeAssignment{TypeReference: "Sequence2", Type: SequenceType{Components: ComponentTypeList{
+					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+					NamedComponentType{NamedType: NamedType{Identifier: "field2", Type: BooleanType{}}},
+				}}},
+			},
 		},
 		{
-			name:       "sequence with ellipsis",
-			skipReason: "ExtensionAndException is not fully implemented in asn1.y",
+			name: "sequence with simple extensions",
 			content: `
 			TestSpec DEFINITIONS ::= BEGIN
-				Sequence ::= SEQUENCE {
+				SequenceNoFields ::= SEQUENCE {
+					...
+                }
+				SequenceEmptyAdditionsNoMarker ::= SEQUENCE {
 					field1 BOOLEAN,
 					...
                 }
+				SequenceWithExtensions ::= SEQUENCE {
+					field1 BOOLEAN,
+					...,
+					addition1 BOOLEAN,
+					addition2 BOOLEAN
+                }
 			END
 			`,
-			expected: SequenceType{Components: ComponentTypeList{
-				NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
-			}},
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "SequenceNoFields", Type: SequenceType{}},
+				TypeAssignment{TypeReference: "SequenceEmptyAdditionsNoMarker", Type: SequenceType{Components: ComponentTypeList{
+					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+				}}},
+				TypeAssignment{TypeReference: "SequenceWithExtensions", Type: SequenceType{Components: ComponentTypeList{
+					// TODO: extensions should be exposed to AST
+					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+				}}},
+			},
+		},
+		{
+			name:       "sequence with two component type lists",
+			skipReason: "Current ComponentTypeLists contains ambiguities and conflicts",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				SequenceWithExtensions ::= SEQUENCE {
+					field1 BOOLEAN,
+					...,
+					addition1 BOOLEAN,
+					addition2 BOOLEAN,
+					...,
+					field2 BOOLEAN
+                }
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "SequenceNoFields", Type: SequenceType{}},
+				TypeAssignment{TypeReference: "SequenceEmptyAdditionsNoMarker", Type: SequenceType{Components: ComponentTypeList{
+					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+				}}},
+				TypeAssignment{TypeReference: "SequenceWithExtensions", Type: SequenceType{Components: ComponentTypeList{
+					// TODO: extensions should be exposed to AST
+					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+				}}},
+			},
 		},
 	}
 	for _, tc := range testCases {
@@ -579,7 +630,7 @@ func TestSequenceSyntax(t *testing.T) {
 				t.Skip(tc.skipReason)
 			}
 			r := testNotFails(t, tc.content)
-			if diff := cmp.Diff(r.ModuleBody.AssignmentList.GetType("Sequence").Type, tc.expected); diff != "" {
+			if diff := cmp.Diff(r.ModuleBody.AssignmentList, tc.expected); diff != "" {
 				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})
