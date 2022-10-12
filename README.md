@@ -2,11 +2,12 @@
 
 ## Rationale
 
-Currently existing Go libraries for asn1 support are either reflection-based (crypto/asn1) or 
+Built-in Go libraries for asn1 support are either reflection-based (crypto/asn1) or 
 very low-level (golang.org/x/crypto/cryptobyte). Idea is to provide Protobuf-like experience for 
 working with ASN1 in Golang.
 
-Originally started to back [gorberos](https://github.com/chemikadze/gorberos) kerberos wannabe-library.
+Note: currently provided code generator implementation creates definitions to be used with crypto/asn1, 
+so all its limitations (no real CHOICE support) apply for this project as well.
 
 ## Architecture
 
@@ -39,10 +40,11 @@ Originally started to back [gorberos](https://github.com/chemikadze/gorberos) ke
  - [x] verify serialization on Kerberos
  - [ ] DER serialization generator
  - [ ] DER deserialization generator
-4) Missing ASN features
- - [ ] SET type (not implemented in parser & generator)
- - [ ] ANY type (only 1988 standard?) - not supported by encoding/asn1
- - [ ] CHOICE type - not supported by encoding/asn1
+4) Supported ASN features
+ - [x] SET type
+ - [x] ANY type (1988 standard) - mapped to interface{}
+ - [x] CHOICE type - mapped to interface{}, or asn1.RawValue if selections are tagged
+ - [ ] Extensions in SEQUENCE, SET, CHOICE
  - [ ] _Add more as found_
 
 ## Adding features
