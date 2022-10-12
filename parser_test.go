@@ -630,7 +630,83 @@ func TestSequenceSyntax(t *testing.T) {
 				t.Skip(tc.skipReason)
 			}
 			r := testNotFails(t, tc.content)
-			if diff := cmp.Diff(r.ModuleBody.AssignmentList, tc.expected); diff != "" {
+			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
+				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+			}
+		})
+	}
+}
+
+func TestChoiceSyntax(t *testing.T) {
+	testCases := []struct {
+		name       string
+		content    string
+		expected   AssignmentList
+		skipReason string
+	}{
+		{
+			name: "choice with elements",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Choice ::= CHOICE {
+					alt1 BOOLEAN,
+					alt2 INTEGER
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Choice", Type: ChoiceType{AlternativeTypeList: []NamedType{
+					{Identifier: "alt1", Type: BooleanType{}},
+					{Identifier: "alt2", Type: IntegerType{}},
+				}}},
+			},
+		},
+		{
+			name: "choice extensions",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Choice ::= CHOICE { ... }
+				Choice2 ::= CHOICE {
+					alt1 BOOLEAN,
+					alt2 BOOLEAN,
+					... 
+				}
+				Choice3 ::= CHOICE {
+					alt1 BOOLEAN,
+					...,
+					ext2 BOOLEAN,
+					ext3 BOOLEAN
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Choice", Type: ChoiceType{ExtensionTypes: []ChoiceExtension{}}},
+				TypeAssignment{TypeReference: "Choice2", Type: ChoiceType{
+					AlternativeTypeList: []NamedType{
+						{Identifier: "alt1", Type: BooleanType{}},
+						{Identifier: "alt2", Type: BooleanType{}},
+					},
+					ExtensionTypes: []ChoiceExtension{}},
+				},
+				TypeAssignment{TypeReference: "Choice3", Type: ChoiceType{
+					AlternativeTypeList: []NamedType{
+						{Identifier: "alt1", Type: BooleanType{}},
+					},
+					ExtensionTypes: []ChoiceExtension{
+						NamedType{Identifier: "ext2", Type: BooleanType{}},
+						NamedType{Identifier: "ext3", Type: BooleanType{}},
+					}},
+				},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
+			}
+			r := testNotFails(t, tc.content)
+			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
 				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})

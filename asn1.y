@@ -742,6 +742,7 @@ ChoiceType : CHOICE OPEN_CURLY AlternativeTypeLists CLOSE_CURLY  { $$ = $3 }
 
 AlternativeTypeLists : AlternativeTypeList COMMA ExtensionAndException ExtensionAdditionAlternatives OptionalExtensionMarker { $$ = ChoiceType{$1,$4} }
                      | AlternativeTypeList  { $$ = ChoiceType{AlternativeTypeList: $1} }
+                     | ExtensionAndException ExtensionAdditionAlternatives OptionalExtensionMarker { $$ = ChoiceType{nil, $2} }
 ;
 
 // defined in grammar, but screws up ExtensionAndException parsing
