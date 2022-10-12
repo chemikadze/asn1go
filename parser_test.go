@@ -525,3 +525,63 @@ func TestDefaultTags(t *testing.T) {
 		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
 	}
 }
+
+func TestSequenceSyntax(t *testing.T) {
+	testCases := []struct {
+		name       string
+		content    string
+		expected   Type
+		skipReason string
+	}{
+		{
+			name: "empty sequence",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Sequence ::= SEQUENCE { }
+			END
+			`,
+			expected: SequenceType{},
+		},
+		{
+			name: "simple sequence",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Sequence ::= SEQUENCE {
+					field1 BOOLEAN,
+					field2 BOOLEAN
+                }
+			END
+			`,
+			expected: SequenceType{Components: ComponentTypeList{
+				NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+				NamedComponentType{NamedType: NamedType{Identifier: "field2", Type: BooleanType{}}},
+			}},
+		},
+		{
+			name:       "sequence with ellipsis",
+			skipReason: "ExtensionAndException is not fully implemented in asn1.y",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Sequence ::= SEQUENCE {
+					field1 BOOLEAN,
+					...
+                }
+			END
+			`,
+			expected: SequenceType{Components: ComponentTypeList{
+				NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+			}},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
+			}
+			r := testNotFails(t, tc.content)
+			if diff := cmp.Diff(r.ModuleBody.AssignmentList.GetType("Sequence").Type, tc.expected); diff != "" {
+				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+			}
+		})
+	}
+}
