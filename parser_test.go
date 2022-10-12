@@ -591,10 +591,16 @@ func TestSequenceSyntax(t *testing.T) {
 				TypeAssignment{TypeReference: "SequenceEmptyAdditionsNoMarker", Type: SequenceType{Components: ComponentTypeList{
 					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
 				}}},
-				TypeAssignment{TypeReference: "SequenceWithExtensions", Type: SequenceType{Components: ComponentTypeList{
-					// TODO: extensions should be exposed to AST
-					NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
-				}}},
+				TypeAssignment{TypeReference: "SequenceWithExtensions", Type: SequenceType{
+					Components: ComponentTypeList{
+						// TODO: extensions should be exposed to AST
+						NamedComponentType{NamedType: NamedType{Identifier: "field1", Type: BooleanType{}}},
+					},
+					ExtensionAdditions: ExtensionAdditions{
+						NamedComponentType{NamedType: NamedType{Identifier: "addition1", Type: BooleanType{}}},
+						NamedComponentType{NamedType: NamedType{Identifier: "addition2", Type: BooleanType{}}},
+					},
+				}},
 			},
 		},
 		{

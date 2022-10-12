@@ -46,6 +46,7 @@ import (
     RangeEndpoint RangeEndpoint
     NamedType NamedType
     ComponentType ComponentType
+    ComponentTypeLists ComponentTypeLists
     ComponentTypeList ComponentTypeList
     SequenceType SequenceType
     Tag Tag
@@ -62,6 +63,7 @@ import (
     ChoiceType ChoiceType
     ExtensionAdditionAlternative ChoiceExtension
     ExtensionAdditionAlternativesList []ChoiceExtension
+    ExtensionAdditions []ExtensionAddition
 }
 
 %token WHITESPACE
@@ -277,7 +279,7 @@ import (
 %type <ComponentType> ComponentType
 %type <ComponentTypeList> ComponentTypeList
 %type <ComponentTypeList> RootComponentTypeList
-%type <ComponentTypeList> ComponentTypeLists
+%type <ComponentTypeLists> ComponentTypeLists
 %type <Type> TaggedType
 %type <Tag> Tag
 %type <Value> ClassNumber
@@ -303,7 +305,9 @@ import (
 %type <ExtensionAdditionAlternative> ExtensionAdditionAlternative
 %type <ExtensionAdditionAlternativesList> ExtensionAdditionAlternatives
 %type <ExtensionAdditionAlternativesList> ExtensionAdditionAlternativesList
-
+%type <ExtensionAdditions> ExtensionAdditions
+%type <ExtensionAdditions> ExtensionAdditionList
+%type <ExtensionAdditions> ExtensionAddition
 
 //
 // end declarations
@@ -663,7 +667,7 @@ NullType : NULL  { $$ = NullType{} }
 
 SequenceType : SEQUENCE OPEN_CURLY CLOSE_CURLY  { $$ = SequenceType{} }
              | SEQUENCE OPEN_CURLY ExtensionAndException OptionalExtensionMarker CLOSE_CURLY  { $$ = SequenceType{} }
-             | SEQUENCE OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SequenceType{Components: $3} }
+             | SEQUENCE OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SequenceType{Components: append($3.Components, $3.TrailingComponents...), ExtensionAdditions: $3.ExtensionAdditions} }
 ;
 
 ExtensionAndException : ELLIPSIS
@@ -675,9 +679,9 @@ OptionalExtensionMarker : COMMA ELLIPSIS | /*empty*/
 
 // TODO Extensions are not fully supported, extension information will be ignored.
 // Edited from the doc - ComponentTypeList used directly instead of RootComponentTypeList to avoid ambiguity around COMMA.
-ComponentTypeLists : ComponentTypeList
-                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions OptionalExtensionMarker
-                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions ExtensionEndMarker COMMA ComponentTypeList  { $$ = append($1, $7...) }
+ComponentTypeLists : ComponentTypeList  { $$ = ComponentTypeLists{Components: $1} }
+                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions OptionalExtensionMarker  { $$ = ComponentTypeLists{Components: $1, ExtensionAdditions: $4} }
+                   | ComponentTypeList COMMA ExtensionAndException ExtensionAdditions ExtensionEndMarker COMMA ComponentTypeList  { $$ = ComponentTypeLists{Components: $1, ExtensionAdditions: $4, TrailingComponents: $7} }
 //                   | ExtensionAndException ExtensionAdditions ExtensionEndMarker "," RootComponentTypeList
 //                   | ExtensionAndException ExtensionAdditions OptionalExtensionMarker
 ;
@@ -689,16 +693,16 @@ RootComponentTypeList : ComponentTypeList
 ExtensionEndMarker : COMMA ELLIPSIS
 ;
 
-ExtensionAdditions : COMMA ExtensionAdditionList
-                   | /*empty*/
+ExtensionAdditions : COMMA ExtensionAdditionList  { $$ = $2 }
+                   | /*empty*/  { $$ = nil }
 ;
 
-ExtensionAdditionList : ExtensionAddition
-                      | ExtensionAdditionList COMMA ExtensionAddition
+ExtensionAdditionList : ExtensionAddition  { $$ = append([]ExtensionAddition{}, $1...) }
+                      | ExtensionAdditionList COMMA ExtensionAddition  { $$ = append($1, $3...) }
 ;
 
-ExtensionAddition : ComponentType
-                  | ExtensionAdditionGroup
+ExtensionAddition : ComponentType  { $$ = []ExtensionAddition{$1} }
+                  | ExtensionAdditionGroup  { $$ = nil }
 
 ExtensionAdditionGroup : LEFT_VERSION_BRACKETS VersionNumber ComponentTypeList RIGHT_VERSION_BRACKETS
 ;
@@ -721,7 +725,7 @@ ComponentType : NamedType  { $$ = NamedComponentType{NamedType: $1} }
 
 SetType :  SET OPEN_CURLY CLOSE_CURLY  { $$ = SetType{} }
         |  SET OPEN_CURLY ExtensionAndException OptionalExtensionMarker CLOSE_CURLY  { $$ = SetType{} }
-        |  SET OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SetType{Components: $3} }
+        |  SET OPEN_CURLY ComponentTypeLists CLOSE_CURLY  { $$ = SetType{Components: append($3.Components, $3.TrailingComponents...), ExtensionAdditions: $3.ExtensionAdditions} }
 
 
 // 27.1

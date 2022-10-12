@@ -301,16 +301,32 @@ func (OctetStringType) Zero() interface{} {
 
 // TODO Extensions are not supported
 type SequenceType struct {
-	Components ComponentTypeList
+	Components         ComponentTypeList
+	ExtensionAdditions ExtensionAdditions
 }
 
 func (SequenceType) Zero() interface{} {
 	return nil
 }
 
+type ExtensionAdditions []ExtensionAddition
+
+type ExtensionAddition interface {
+	isExtensionAddition()
+}
+
+// ComponentTypeLists is not used in AST directly but is intermediate repr.
+type ComponentTypeLists struct {
+	Components         ComponentTypeList
+	ExtensionAdditions ExtensionAdditions
+	TrailingComponents ComponentTypeList
+}
+
 type ComponentTypeList []ComponentType
 
+// ComponentType can be used in ExtensionAddition context, so types implementing it must implement both.
 type ComponentType interface {
+	ExtensionAddition
 	IsComponentType()
 }
 
@@ -323,6 +339,8 @@ type NamedComponentType struct {
 
 func (NamedComponentType) IsComponentType() {}
 
+func (NamedComponentType) isExtensionAddition() {}
+
 // reference to other SEQUENCE type to be expanded
 type ComponentsOfComponentType struct {
 	Type Type
@@ -330,9 +348,12 @@ type ComponentsOfComponentType struct {
 
 func (ComponentsOfComponentType) IsComponentType() {}
 
+func (ComponentsOfComponentType) isExtensionAddition() {}
+
 // TODO Extensions are not supported
 type SetType struct {
-	Components ComponentTypeList
+	Components         ComponentTypeList
+	ExtensionAdditions ExtensionAdditions
 }
 
 func (SetType) Zero() interface{} {
