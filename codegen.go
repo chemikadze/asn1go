@@ -188,10 +188,10 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Ex
 	case OctetStringType:
 		return &goast.ArrayType{Elt: goast.NewIdent("byte")}
 	case SequenceType:
-		return ctx.structFromComponents(t.Components)
+		return ctx.structFromComponents(t.Components, t.ExtensionAdditions)
 	case SetType:
 		*isSet = true
-		return ctx.structFromComponents(t.Components)
+		return ctx.structFromComponents(t.Components, t.ExtensionAdditions)
 	case SequenceOfType:
 		return &goast.ArrayType{Elt: ctx.generateTypeBody(t.Type, isSet)}
 	case SetOfType:
@@ -271,13 +271,22 @@ func (ctx *moduleContext) taggedChoiceTypeAlternative(name Identifier, t Type) b
 	}
 }
 
-func (ctx *moduleContext) structFromComponents(components ComponentTypeList) goast.Expr {
+func (ctx *moduleContext) structFromComponents(components ComponentTypeList, extensions ExtensionAdditions) goast.Expr {
 	fields := &goast.FieldList{}
 	for _, field := range components {
 		switch f := field.(type) {
 		case NamedComponentType:
 			fields.List = append(fields.List, ctx.generateStructField(f))
-		case ComponentsOfComponentType: // TODO
+		case ComponentsOfComponentType: // TODO: implement
+			ctx.appendError(errors.New("COMPONENTS OF is not supported"))
+		}
+	}
+	for _, field := range extensions {
+		switch f := field.(type) {
+		case NamedComponentType:
+			fields.List = append(fields.List, ctx.generateStructField(f))
+		case ComponentsOfComponentType: // TODO: implement
+			ctx.appendError(errors.New("COMPONENTS OF is not supported"))
 		}
 	}
 	return &goast.StructType{

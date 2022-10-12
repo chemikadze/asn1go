@@ -157,12 +157,30 @@ type MySequence struct {
 	}
 }
 
+type e2eTestCase struct {
+	name      string
+	asnModule string
+	goModule  string
+}
+
+func testParsingAndGeneration(t *testing.T, testCases []e2eTestCase) {
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			m := parseModule(t, tc.asnModule)
+			expected := tc.goModule
+			got, err := generateDeclarationsString(*m)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err.Error())
+			}
+			if diff := cmp.Diff(expected, got); diff != "" {
+				t.Errorf("Generated module did not match expected, diff (-want, +got): %v", diff)
+			}
+		})
+	}
+}
+
 func TestTagType(t *testing.T) {
-	testCases := []struct {
-		name      string
-		asnModule string
-		goModule  string
-	}{
+	testCases := []e2eTestCase{
 		{
 			name: "default (explicit)",
 			asnModule: `
@@ -230,20 +248,54 @@ type Struct struct {
 `,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			m := parseModule(t, tc.asnModule)
-			expected := tc.goModule
-			got, err := generateDeclarationsString(*m)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err.Error())
-			}
-			if diff := cmp.Diff(expected, got); diff != "" {
-				t.Errorf("Generated module did not match expected, diff (-want, +got): %v", diff)
-			}
-		})
-	}
+	testParsingAndGeneration(t, testCases)
+}
 
+func TestExtensionsE2E(t *testing.T) {
+	testcases := []e2eTestCase{
+		{
+			name: "sequence extension",
+			asnModule: `
+				TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+					Struct ::= SEQUENCE {
+						untagged BOOLEAN,
+						...,
+						extension BOOLEAN
+					}
+				END
+			`,
+			goModule: `package TestSpec
+
+type Struct struct {
+	Untagged	bool
+	Extension	bool
+}
+`,
+		},
+		{
+			name: "set extension",
+			asnModule: `
+				TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+					Set ::= SET {
+						untagged BOOLEAN,
+						...,
+						extension BOOLEAN
+					}
+				END
+			`,
+			goModule: `package TestSpec
+
+type (
+	SetSET	struct {
+		Untagged	bool
+		Extension	bool
+	}
+	Set	= SetSET
+)
+`,
+		},
+	}
+	testParsingAndGeneration(t, testcases)
 }
 
 func parseModule(t *testing.T, s string) *ModuleDefinition {
