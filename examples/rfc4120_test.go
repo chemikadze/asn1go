@@ -75,7 +75,7 @@ func TestKdcReq(t *testing.T) {
 			{149, []byte{}},
 		},
 		Req_body: KDC_REQ_BODY{
-			Kdc_options: asn1.BitString{[]byte{0x00, 0x00, 0x00, 0x10}, 32},
+			Kdc_options: asn1.BitString{Bytes: []byte{0x00, 0x00, 0x00, 0x10}, BitLength: 32},
 			Cname:       PrincipalName{1, []KerberosString{"chemikadze"}},
 			Realm:       "ATHENA.MIT.EDU",
 			Sname:       PrincipalName{2, []KerberosString{"krbtgt", "ATHENA.MIT.EDU"}},

@@ -8,6 +8,17 @@ generate:
 	go generate -v ./...
 .PHONY: generate
 
+style: vet fmt
+.PHONY: style
+
+vet:
+	go vet ./...
+.PHONY: vet
+
+fmt:
+	gofmt -w -s ./
+.PHONY: fmt
+
 deps:
 	go get golang.org/x/tools/cmd/goyacc
 .PHONY: deps
