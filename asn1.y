@@ -436,8 +436,8 @@ Reference : typereference  { $$ = TypeReference($1) }
 //          | objectsetreference
 ;
 
-AssignmentList : Assignment  { $$ = NewAssignmentList($1) }
-               | AssignmentList Assignment  { $$ = $1.Append($2) }
+AssignmentList : Assignment  { $$ = AssignmentList{$1} }
+               | AssignmentList Assignment  { $$ = append($1, $2) }
 ;
 
 Assignment : TypeAssignment
@@ -832,6 +832,7 @@ NameAndNumberForm : identifier OPEN_ROUND NumberForm CLOSE_ROUND
         case ObjectIdElement:
             $$ = ObjectIdElement{Name: $1, Id: v.Id}
         default:
+            // TODO: return error instead?
             panic(fmt.Sprintf("Expected DefinedValue or ObjectIdElement from NumberForm, got %v", $3))
         }
     }

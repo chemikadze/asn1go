@@ -1289,13 +1289,13 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line asn1.y:439
 		{
-			yyVAL.AssignmentList = NewAssignmentList(yyDollar[1].Assignment)
+			yyVAL.AssignmentList = AssignmentList{yyDollar[1].Assignment}
 		}
 	case 48:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line asn1.y:440
 		{
-			yyVAL.AssignmentList = yyDollar[1].AssignmentList.Append(yyDollar[2].Assignment)
+			yyVAL.AssignmentList = append(yyDollar[1].AssignmentList, yyDollar[2].Assignment)
 		}
 	case 51:
 		yyDollar = yyS[yypt-1 : yypt+1]

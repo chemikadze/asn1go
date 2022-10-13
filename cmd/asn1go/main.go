@@ -1,3 +1,4 @@
+// Binary asn1go generates go code from ASN.1 definitions.
 package main
 
 import (
@@ -11,8 +12,11 @@ var usage = `
 asn1go [[input] output]
 
 Generates go file from input and writes to output.
-If output is omitted, uses stdout. If input is omitted,
-reads from stdin.
+If output is omitted, writes go file to stdout. 
+If input is omitted as well, reads from stdin.
+
+Input should be an ASN.1 module file.
+Output is a go file.
 `
 
 type flagsType struct {
