@@ -97,15 +97,22 @@ var (
 	}
 )
 
+// MyLexer is an ASN.1 lexer that is producing lexems for the generated goyacc parser.
 type MyLexer struct {
-	bufReader     *bufio.Reader
-	err           error
+	bufReader *bufio.Reader
+	// err is used to store lexer or parser error.
+	err error
+	// result is where parsing result will be written by the parser.
 	result        *ModuleDefinition
 	lastWasNumber bool
 
+	// lineNo is 0-indexed line number used for error reporting.
 	lineNo int
 }
 
+// Lex implements yyLexer.
+// It is reading runes from the bufReader, stores some state in lval if needed, and returns token type.
+// If syntax error was detected, it saves it in err, and returns -1, which is understood by goyacc as end of input.
 func (lex *MyLexer) Lex(lval *yySymType) int {
 	lastWasNumber := lex.lastWasNumber
 	lex.lastWasNumber = false
@@ -399,6 +406,7 @@ func (lex *MyLexer) consumeNumber(lval *yySymType) int {
 	}
 }
 
+// Error implements yyLexer, and is used by the parser to communicate errors.
 func (lex *MyLexer) Error(e string) {
 	lex.err = fmt.Errorf("line %v: %v", lex.lineNo+1, e)
 }
