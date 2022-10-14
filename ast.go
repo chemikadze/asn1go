@@ -1,7 +1,5 @@
 package asn1go
 
-import "encoding/asn1"
-
 // ModuleDefinition represents ASN.1 Module.
 // This and all other AST types are named according to their BNF in X.680 document,
 // if not specified otherwise.
@@ -54,9 +52,8 @@ type SymbolsFromModule struct {
 
 // Symbol is exported or imported symbol.
 // Only References are supported, ParameterizedReference is not implemented.
-// TODO: make IsSymbol private.
 type Symbol interface {
-	IsSymbol()
+	isSymbol()
 }
 
 // GlobalModuleReference fully qualifies module from which symbols are imported.
@@ -144,9 +141,7 @@ type NamedType struct {
 }
 
 // Zero implements Type.
-func (t NamedType) Zero() interface{} {
-	return t.Type.Zero()
-}
+func (t NamedType) isType() {}
 
 // isChoiceExtension implements ChoiceExtension.
 func (t NamedType) isChoiceExtension() {
@@ -172,12 +167,10 @@ func (r TypeReference) Name() string {
 }
 
 // Zero implements Type.
-func (r TypeReference) Zero() interface{} {
-	return nil
-}
+func (r TypeReference) isType() {}
 
 // IsSymbol implements Symbol.
-func (TypeReference) IsSymbol() {}
+func (TypeReference) isSymbol() {}
 
 // ValueReference refers to a value defined in same module or imported from different module.
 // This is lexical construct, named `valuereference` in the doc.
@@ -190,7 +183,7 @@ func (r ValueReference) Name() string {
 }
 
 // IsSymbol implements Symbol.
-func (ValueReference) IsSymbol() {}
+func (ValueReference) isSymbol() {}
 
 // ModuleReference refers to a module.
 // This is lexical construct, named `modulereference` in the doc.
@@ -198,15 +191,14 @@ func (ValueReference) IsSymbol() {}
 type ModuleReference string
 
 // IsSymbol implements Symbol.
-func (ModuleReference) IsSymbol() {}
+func (ModuleReference) isSymbol() {}
 
 // Identifier is a non-referential identifier.
 // This is a lexical construct, named `identifier` in the doc.
 // See X.680, section 11.3.
 type Identifier string
 
-// Name implements Reference.
-// TODO: it should not implement Reference according to the BNF.
+// Name returns name of the reference.
 func (id Identifier) Name() string {
 	return string(id)
 }
@@ -263,27 +255,21 @@ func (Boolean) Type() Type {
 // types
 
 // Type is a builtin, referenced or constrained type.
-// TODO: replace Zero with isType.
 type Type interface {
-	Zero() interface{}
+	isType()
 }
 
 // NullType is an ast representation of NULL type.
 type NullType struct{}
 
 // Zero implements Type.
-func (NullType) Zero() interface{} {
-	return nil
-}
+func (NullType) isType() {}
 
 // ObjectIdentifierType is an ast representation of OBJECT IDENTIFIER type.
-// TODO: implement these properly.
 type ObjectIdentifierType struct{}
 
 // Zero implements Type.
-func (ObjectIdentifierType) Zero() interface{} {
-	return make(DefinitiveIdentifier, 0)
-}
+func (ObjectIdentifierType) isType() {}
 
 // IntegerType is an ast representation of INTEGER type.
 type IntegerType struct {
@@ -291,9 +277,7 @@ type IntegerType struct {
 }
 
 // Zero implelents Type.
-func (IntegerType) Zero() interface{} {
-	return 0
-}
+func (IntegerType) isType() {}
 
 // EnumeratedType is an ast representation of ENUMERATED type.
 // TODO: implement enumerations properly.
@@ -301,25 +285,19 @@ type EnumeratedType struct {
 }
 
 // Zero implements Type.
-func (EnumeratedType) Zero() interface{} {
-	return asn1.Enumerated(0)
-}
+func (EnumeratedType) isType() {}
 
 // RealType is an ast representation of REAL type.
 type RealType struct{}
 
 // Zero implements Type.
-func (RealType) Zero() interface{} {
-	return 0.0
-}
+func (RealType) isType() {}
 
 // BooleanType is an ast representation of BOOLEAN type.
 type BooleanType struct{}
 
 // Zero implements Type.
-func (BooleanType) Zero() interface{} {
-	return false
-}
+func (BooleanType) isType() {}
 
 // ChoiceType is an ast representation of CHOICE type.
 // It is partially implemented, exceptions are ignored.
@@ -330,9 +308,7 @@ type ChoiceType struct {
 }
 
 // Zero implements Type.
-func (ChoiceType) Zero() interface{} {
-	return nil
-}
+func (ChoiceType) isType() {}
 
 // ChoiceExtension is a type for choice extensions.
 // Only NamedType is implemented, ExtensionAdditionAlternativesGroup is not supported.
@@ -352,41 +328,33 @@ type RestrictedStringType struct {
 }
 
 // Zero implements Value.
-func (RestrictedStringType) Zero() interface{} {
-	return ""
-}
+func (RestrictedStringType) isType() {}
 
 // CharacterStringType is an ast representation of CHARACTER STRING type.
 // It is defined as UnrestrictedCharacterStringType in BNF.
 type CharacterStringType struct{}
 
 // Zero implements Type.
-func (CharacterStringType) Zero() interface{} {
-	return ""
-}
+func (CharacterStringType) isType() {}
 
 // OctetStringType is an ast representation of OCTET STRING type.
 type OctetStringType struct{}
 
 // Zero implements Type.
-func (OctetStringType) Zero() interface{} {
-	return make([]byte, 0)
-}
+func (OctetStringType) isType() {}
 
 ////////////////////////////////////////////////
 // sequence type
 
 // SequenceType is an ast representation of SEQUENCE type.
-// TODO: Extensions are not supported.
+// TODO: Exceptions are not supported.
 type SequenceType struct {
 	Components         ComponentTypeList
 	ExtensionAdditions ExtensionAdditions
 }
 
 // Zero implements Type.
-func (SequenceType) Zero() interface{} {
-	return nil
-}
+func (SequenceType) isType() {}
 
 // ExtensionAdditions is a list of extension additions in SET or SEQUENCE.
 type ExtensionAdditions []ExtensionAddition
@@ -408,10 +376,9 @@ type ComponentTypeList []ComponentType
 
 // ComponentType is a component type of SEQUENCE or SET.
 // It can be used in ExtensionAddition context, so types implementing it must implement both.
-// TODO: rename IsComponentType to isComponentType.
 type ComponentType interface {
 	ExtensionAddition
-	IsComponentType()
+	isComponentType()
 }
 
 // NamedComponentType is an entry in a SEQUENCE definition.
@@ -422,7 +389,7 @@ type NamedComponentType struct {
 }
 
 // IsComponentType implements ComponentType.
-func (NamedComponentType) IsComponentType() {}
+func (NamedComponentType) isComponentType() {}
 
 // isExtensionAddition implements ExtensionAddition.
 func (NamedComponentType) isExtensionAddition() {}
@@ -433,7 +400,7 @@ type ComponentsOfComponentType struct {
 }
 
 // IsComponentType implements ComponentType.
-func (ComponentsOfComponentType) IsComponentType() {}
+func (ComponentsOfComponentType) isComponentType() {}
 
 // isExtensionAddition implements ExtensionAddition.
 func (ComponentsOfComponentType) isExtensionAddition() {}
@@ -446,9 +413,7 @@ type SetType struct {
 }
 
 // Zero implements Type.
-func (SetType) Zero() interface{} {
-	return nil
-}
+func (SetType) isType() {}
 
 // TaggedType is a tagged type.
 type TaggedType struct {
@@ -465,9 +430,7 @@ type TaggedType struct {
 }
 
 // Zero implements Type.
-func (t TaggedType) Zero() interface{} {
-	return t.Type.Zero()
-}
+func (t TaggedType) isType() {}
 
 // Tag is a tag value.
 type Tag struct {
@@ -493,9 +456,7 @@ type SequenceOfType struct {
 }
 
 // Zero implements Type.
-func (SequenceOfType) Zero() interface{} {
-	return make([]interface{}, 0)
-}
+func (SequenceOfType) isType() {}
 
 // SetOfType is an ast representation of SET OF type.
 type SetOfType struct {
@@ -503,9 +464,7 @@ type SetOfType struct {
 }
 
 // Zero implements Type.
-func (SetOfType) Zero() interface{} {
-	return make([]interface{}, 0)
-}
+func (SetOfType) isType() {}
 
 // AnyType is an ast representation of ANY type.
 // It is NOT defined in X.680, but added for compatibility with older ASN definitions, e.g. X.509.
@@ -516,9 +475,7 @@ type AnyType struct {
 }
 
 // Zero implements Type.
-func (AnyType) Zero() interface{} {
-	return nil
-}
+func (AnyType) isType() {}
 
 // BitStringType is an ast representation of BIT STRING type.
 type BitStringType struct {
@@ -526,9 +483,7 @@ type BitStringType struct {
 }
 
 // Zero implements Type.
-func (BitStringType) Zero() interface{} {
-	return make([]bool, 0)
-}
+func (BitStringType) isType() {}
 
 // NamedBit is a named bit in BIT STRING.
 type NamedBit struct {
@@ -549,9 +504,7 @@ type ConstraintedType struct {
 }
 
 // Zero implements Type.
-func (t ConstraintedType) Zero() interface{} {
-	return t.Type.Zero()
-}
+func (t ConstraintedType) isType() {}
 
 // Constraint is a constraint applied to a type.
 type Constraint struct {
@@ -561,9 +514,8 @@ type Constraint struct {
 
 // ConstraintSpec can be SubtypeConstraint or GeneralConstraint.
 // GeneralConstraint is not implemented.
-// TODO: rename IsConstraintSpec to isConstraintSpec.
 type ConstraintSpec interface {
-	IsConstraintSpec()
+	isConstraintSpec()
 }
 
 // SingleElementConstraint is a Constraint of single intersection elements.
@@ -577,23 +529,22 @@ func SingleElementConstraint(elem Elements) Constraint {
 type SubtypeConstraint []ElementSetSpec
 
 // IsConstraintSpec implements ConstraintSpec.
-func (SubtypeConstraint) IsConstraintSpec() {}
+func (SubtypeConstraint) isConstraintSpec() {}
 
 // ElementSetSpec is element of the SubtypeConstraint.
-// TODO: rename IsElementSpec to isElementSpec.
 type ElementSetSpec interface {
 	Elements
-	IsElementSpec()
+	isElementSpec()
 }
 
 // Unions is ElementSetSpec and Elements
 type Unions []Intersections
 
 // IsElementSpec implements ElementSpec.
-func (Unions) IsElementSpec() {}
+func (Unions) isElementSpec() {}
 
 // IsElements implements Elements.
-func (Unions) IsElements() {}
+func (Unions) isElements() {}
 
 // Intersections is a part of SubtypeConstraint.
 type Intersections []IntersectionElements
@@ -610,15 +561,14 @@ type Exclusions struct {
 }
 
 // IsElementSpec implements ElementSpec.
-func (Exclusions) IsElementSpec() {}
+func (Exclusions) isElementSpec() {}
 
 // IsElements implements Elements.
-func (Exclusions) IsElements() {}
+func (Exclusions) isElements() {}
 
 // Elements is one of subtype elements (values, type constraints, etc).
-// TODO: rename IsElements to Elements.
 type Elements interface {
-	IsElements()
+	isElements()
 }
 
 // subtype elements
@@ -629,7 +579,7 @@ type SingleValue struct {
 }
 
 // IsElements implements Elements.
-func (SingleValue) IsElements() {}
+func (SingleValue) isElements() {}
 
 // ValueRange is included or excluded range.
 type ValueRange struct {
@@ -638,7 +588,7 @@ type ValueRange struct {
 }
 
 // IsElements implements Elements.
-func (ValueRange) IsElements() {}
+func (ValueRange) isElements() {}
 
 // RangeEndpoint is left or right side of the ValueRange.
 type RangeEndpoint struct {
@@ -657,7 +607,7 @@ type TypeConstraint struct {
 }
 
 // IsElements implements Elements.
-func (TypeConstraint) IsElements() {}
+func (TypeConstraint) isElements() {}
 
 // SizeConstraint is a SIZE constraint expressed by another Constraint.
 type SizeConstraint struct {
@@ -665,14 +615,14 @@ type SizeConstraint struct {
 }
 
 // IsElements implements Elements.
-func (SizeConstraint) IsElements() {}
+func (SizeConstraint) isElements() {}
 
 // InnerTypeConstraint is WITH COMPONENT constraint.
 // Contents are not represented in parsed AST and are ignored.
 type InnerTypeConstraint struct{}
 
 // IsElements implements Elements.
-func (InnerTypeConstraint) IsElements() {}
+func (InnerTypeConstraint) isElements() {}
 
 // GeneralConstraint is not implemented.
 // It is defined by X.682.
@@ -680,7 +630,7 @@ func (InnerTypeConstraint) IsElements() {}
 type GeneralConstraint struct{}
 
 // IsConstraintSpec implements ConstraintSpec.
-func (GeneralConstraint) IsConstraintSpec() {}
+func (GeneralConstraint) isConstraintSpec() {}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // values
@@ -699,11 +649,6 @@ func (DefinedValue) Type() Type {
 	return nil
 }
 
-// IsObjectIdComponent implements ObjectIdComponent.
-func (DefinedValue) IsObjectIdComponent() bool {
-	return true
-}
-
 // IdentifiedIntegerValue is named value defined for the type.
 // TODO: use of these in assignments is not implemented.
 type IdentifiedIntegerValue struct {
@@ -720,52 +665,23 @@ func (x IdentifiedIntegerValue) Type() Type {
 // OID
 
 // ObjectIdentifierValue is a value of OBJECT IDENTIFIER type.
-type ObjectIdentifierValue []ObjIdComponents
-
-// NewObjectIdentifierValue creates ObjectIdentifierValue from components.
-// TODO: remove.
-func NewObjectIdentifierValue(initial ...ObjIdComponents) ObjectIdentifierValue {
-	return append(make(ObjectIdentifierValue, 0), initial...)
-}
-
-// Append adds elements to the value.
-// TODO: remove.
-func (oid ObjectIdentifierValue) Append(other ...ObjIdComponents) ObjectIdentifierValue {
-	return ObjectIdentifierValue(append(oid, other...))
-}
+type ObjectIdentifierValue []ObjectIdElement
 
 // Type implements Value.
 func (ObjectIdentifierValue) Type() Type {
 	return ObjectIdentifierType{}
 }
 
-// IsObjectIdComponent implements ObjectIdComponent.
-// TODO: clarify why is this needed.
-func (ObjectIdentifierValue) IsObjectIdComponent() bool {
-	return true
-}
-
-// ObjIdComponents is interface for components of ObjectIdentifierValues.
-// TODO: .y seems a bit convoluted, explore if this can be simplified.
-// TODO: rename IsObjectIdComponent as isObjectIdComponent.
-type ObjIdComponents interface {
-	IsObjectIdComponent() bool // fake method for grouping
-}
-
 // ObjectIdElement is object id element in name, number or name and number form.
 type ObjectIdElement struct {
 	// Name is non-empty in name-and-number form.
 	Name string
-	// Id is set in Number or NameAndNumber form, if number is specified as number literal.
-	// TODO: rename to ID.
-	Id int
+	// ID is set in Number or NameAndNumber form, if number is specified as number literal.
+	ID int
 	// Reference is set in NameAndNumber form, when number is provided as DefinedValue.
-	Reference *DefinedValue // nil if Id is set explicitly
-}
-
-// IsObjectIdComponent implements ObjectIdComponent.
-func (ObjectIdElement) IsObjectIdComponent() bool {
-	return true
+	// TODO: not implemented in .y file.
+	// TODO: DefinedValue or identifier in Name seem to be context specific, collapse?
+	Reference *DefinedValue
 }
 
 // end OID

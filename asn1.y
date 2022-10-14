@@ -3,7 +3,6 @@
 package asn1go
 
 import (
-    "fmt"
     "math"
 )
 %}
@@ -25,7 +24,7 @@ import (
     DefinitiveObjIdComponentList []DefinitiveObjIdComponent
     DefinitiveIdentifier DefinitiveIdentifier
     Type Type
-    ObjIdComponents ObjIdComponents
+    ObjectIdElement ObjectIdElement
     DefinedValue DefinedValue
     ObjectIdentifierValue ObjectIdentifierValue
     Value Value
@@ -224,9 +223,9 @@ import (
 %type <Type> EnumeratedType
 %type <Type> AnyType
 %type <NamedType> NamedType
-%type <ObjIdComponents> ObjIdComponents
-%type <ObjIdComponents> NumberForm
-%type <ObjIdComponents> NameAndNumberForm
+%type <ObjectIdElement> NumberForm
+%type <ObjectIdElement> NameAndNumberForm
+%type <ObjectIdElement> ObjIdComponents
 %type <ObjectIdentifierValue> ObjIdComponentsList
 %type <ObjectIdentifierValue> ObjectIdentifierValue
 %type <Value> BuiltinValue
@@ -807,35 +806,25 @@ ObjectIdentifierType : OBJECT IDENTIFIER  { $$ = ObjectIdentifierType{} }
 // 31.3
 
 ObjectIdentifierValue : OPEN_CURLY ObjIdComponentsList CLOSE_CURLY  { $$ = $2 }
-                      | OPEN_CURLY DefinedValue ObjIdComponentsList CLOSE_CURLY  { $$ = NewObjectIdentifierValue($2).Append($3...) }
+                      | OPEN_CURLY DefinedValue ObjIdComponentsList CLOSE_CURLY  { $$ = append(ObjectIdentifierValue{ObjectIdElement{Reference: &$2}}, $3...) }
 ;
 
-ObjIdComponentsList :  ObjIdComponents  { $$ = NewObjectIdentifierValue($1)  }
-                    | ObjIdComponents ObjIdComponentsList  { $$ = NewObjectIdentifierValue($1).Append($2...)  }
+ObjIdComponentsList :  ObjIdComponents  { $$ = ObjectIdentifierValue{$1}  }
+                    | ObjIdComponents ObjIdComponentsList  { $$ = append(ObjectIdentifierValue{$1}, $2...)  }
 ;
 
 ObjIdComponents : NameForm  { $$ = ObjectIdElement{Name: $1} }
                 | NumberForm
                 | NameAndNumberForm
-                | DefinedValue  { $$ = $1 }
+                | DefinedValue  { cpy := $1; $$ = ObjectIdElement{Reference: &cpy} }
 ;
 
-NumberForm : NUMBER   { $$ = ObjectIdElement{Id: $1.IntValue()} }
-           | DefinedValue  { $$ = $1 }
+NumberForm : NUMBER   { $$ = ObjectIdElement{ID: $1.IntValue()} }
+           | DefinedValue  { cpy := $1; $$ = ObjectIdElement{Reference: &cpy} }
 ;
 
 NameAndNumberForm : identifier OPEN_ROUND NumberForm CLOSE_ROUND
-    {
-        switch v := $3.(type) {
-        case DefinedValue:
-            $$ = ObjectIdElement{Name: $1, Reference: &v}
-        case ObjectIdElement:
-            $$ = ObjectIdElement{Name: $1, Id: v.Id}
-        default:
-            // TODO: return error instead?
-            panic(fmt.Sprintf("Expected DefinedValue or ObjectIdElement from NumberForm, got %v", $3))
-        }
-    }
+    { $$ = ObjectIdElement{Name: $1, ID: $3.ID , Reference: $3.Reference} }
 ;
 
 NameForm : identifier

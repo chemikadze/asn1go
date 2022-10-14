@@ -8,11 +8,10 @@ import __yyfmt__ "fmt"
 //line asn1.y:3
 
 import (
-	"fmt"
 	"math"
 )
 
-//line asn1.y:15
+//line asn1.y:14
 type yySymType struct {
 	yys        int
 	name       string
@@ -27,7 +26,7 @@ type yySymType struct {
 	DefinitiveObjIdComponentList      []DefinitiveObjIdComponent
 	DefinitiveIdentifier              DefinitiveIdentifier
 	Type                              Type
-	ObjIdComponents                   ObjIdComponents
+	ObjectIdElement                   ObjectIdElement
 	DefinedValue                      DefinedValue
 	ObjectIdentifierValue             ObjectIdentifierValue
 	Value                             Value
@@ -334,7 +333,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line asn1.y:1062
+//line asn1.y:1052
 
 //line yacctab:1
 var yyExca = [...]int16{
@@ -423,8 +422,8 @@ var yyAct = [...]int16{
 	119, 104, 97, 175, 92, 107, 55, 19, 168, 108,
 	174, 173, 87, 109, 68, 33, 49, 51, 52, 115,
 	167, 166, 171, 105, 157, 160, 165, 116, 78, 158,
-	112, 117, 187, 156, 120, 118, 169, 250, 98, 196,
-	101, 247, 83, 73, 75, 66, 70, 74, 76, 94,
+	112, 117, 187, 156, 120, 118, 169, 247, 98, 196,
+	101, 250, 83, 73, 75, 66, 70, 74, 76, 94,
 	6, 16, 13, 2, 99, 8, 93, 110, 100, 20,
 	0, 0, 139, 0, 0, 198, 0, 0, 0, 172,
 	0, 88, 0, 95, 114, 106, 0, 111, 0, 89,
@@ -516,7 +515,7 @@ var yyPact = [...]int16{
 var yyPgo = [...]int16{
 	0, 30, 13, 44, 216, 1, 529, 525, 523, 522,
 	278, 326, 521, 520, 323, 14, 518, 517, 516, 515,
-	36, 514, 513, 512, 7, 511, 22, 507, 28, 32,
+	36, 514, 513, 512, 7, 22, 511, 507, 28, 32,
 	503, 10, 499, 498, 495, 494, 491, 490, 23, 18,
 	135, 488, 487, 486, 485, 176, 484, 482, 8, 481,
 	480, 473, 468, 467, 11, 466, 461, 31, 459, 26,
@@ -551,7 +550,7 @@ var yyR1 = [...]uint8{
 	104, 105, 105, 105, 107, 109, 109, 110, 110, 108,
 	130, 106, 106, 86, 86, 86, 87, 88, 88, 89,
 	89, 89, 89, 79, 79, 16, 29, 29, 28, 28,
-	25, 25, 25, 25, 26, 26, 27, 14, 73, 73,
+	27, 27, 27, 27, 25, 25, 26, 14, 73, 73,
 	74, 74, 74, 74, 74, 74, 74, 74, 74, 74,
 	74, 74, 74, 75, 90, 90, 46, 46, 47, 47,
 	47, 47, 47, 47, 47, 47, 48, 49, 50, 51,
@@ -622,8 +621,8 @@ var yyChk = [...]int16{
 	-118, -5, -117, -118, -5, 27, -125, -85, -83, -82,
 	-24, 103, -20, -24, 93, 93, -48, 27, -125, -85,
 	-20, -24, 93, 93, 83, -20, -20, -88, -39, -15,
-	8, 129, -102, -29, -15, -28, -15, -25, -14, -26,
-	-27, -5, 8, 31, 25, 8, -1, -121, 45, 30,
+	8, 129, -102, -29, -15, -28, -15, -27, -14, -25,
+	-26, -5, 8, 31, 25, 8, -1, -121, 45, 30,
 	-60, 60, -131, 44, 94, -132, 46, 53, -60, -54,
 	16, 99, 103, 28, -93, -94, -5, 27, 30, -109,
 	30, -121, -20, 27, 30, 30, 32, 27, 30, -126,
@@ -634,7 +633,7 @@ var yyChk = [...]int16{
 	-70, -72, 28, -31, 61, -133, -48, -134, -135, -136,
 	26, 27, 30, 32, -125, -24, -126, -110, -108, -24,
 	17, -123, -38, -15, -118, 27, 17, -125, -82, -31,
-	-20, 27, 131, 27, -26, -15, 25, 8, 37, 8,
+	-20, 27, 131, 27, -25, -15, 25, 8, 37, 8,
 	30, -72, -137, 17, -138, -5, -94, -39, -15, -109,
 	30, -121, 33, 33, -111, 30, 130, 33, -2, -31,
 	-53, -54, 27, 30, 30, -139, -140, -48, 33, 33,
@@ -1065,1112 +1064,1107 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-8 : yypt+1]
-//line asn1.y:334
+//line asn1.y:333
 		{
 			yylex.(*MyLexer).result = &ModuleDefinition{ModuleIdentifier: yyDollar[1].ModuleIdentifier, TagDefault: yyDollar[3].TagDefault, ExtensibilityImplied: yyDollar[4].ExtensionDefault, ModuleBody: yyDollar[7].ModuleBody}
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:337
+//line asn1.y:336
 		{
 			yyVAL.TypeReference = TypeReference(yyDollar[1].name)
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:342
+//line asn1.y:341
 		{
 			yyVAL.ValueReference = ValueReference(yyDollar[1].name)
 		}
 	case 7:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:353
+//line asn1.y:352
 		{
 			yyVAL.ModuleIdentifier = ModuleIdentifier{Reference: yyDollar[1].name, DefinitiveIdentifier: yyDollar[2].DefinitiveIdentifier}
 		}
 	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:356
+//line asn1.y:355
 		{
 			yyVAL.DefinitiveIdentifier = DefinitiveIdentifier(yyDollar[2].DefinitiveObjIdComponentList)
 		}
 	case 9:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:357
+//line asn1.y:356
 		{
 			yyVAL.DefinitiveIdentifier = DefinitiveIdentifier(make([]DefinitiveObjIdComponent, 0))
 		}
 	case 10:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:360
+//line asn1.y:359
 		{
 			yyVAL.DefinitiveObjIdComponentList = append(make([]DefinitiveObjIdComponent, 0), yyDollar[1].DefinitiveObjIdComponent)
 		}
 	case 11:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:361
+//line asn1.y:360
 		{
 			yyVAL.DefinitiveObjIdComponentList = append(append(make([]DefinitiveObjIdComponent, 0), yyDollar[1].DefinitiveObjIdComponent), yyDollar[2].DefinitiveObjIdComponentList...)
 		}
 	case 12:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:364
+//line asn1.y:363
 		{
 			yyVAL.DefinitiveObjIdComponent = DefinitiveObjIdComponent{Name: yyDollar[1].name}
 		}
 	case 13:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:365
+//line asn1.y:364
 		{
 			yyVAL.DefinitiveObjIdComponent = DefinitiveObjIdComponent{Id: yyDollar[1].Number.IntValue()}
 		}
 	case 14:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:366
+//line asn1.y:365
 		{
 			yyVAL.DefinitiveObjIdComponent = yyDollar[1].DefinitiveObjIdComponent
 		}
 	case 15:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:369
+//line asn1.y:368
 		{
 			yyVAL.Number = yyDollar[1].Number
 		}
 	case 16:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:373
+//line asn1.y:372
 		{
 			yyVAL.DefinitiveObjIdComponent = DefinitiveObjIdComponent{Name: yyDollar[1].name, Id: yyDollar[3].Number.IntValue()}
 		}
 	case 17:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:376
+//line asn1.y:375
 		{
 			yyVAL.TagDefault = TAGS_EXPLICIT
 		}
 	case 18:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:377
+//line asn1.y:376
 		{
 			yyVAL.TagDefault = TAGS_IMPLICIT
 		}
 	case 19:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:378
+//line asn1.y:377
 		{
 			yyVAL.TagDefault = TAGS_AUTOMATIC
 		}
 	case 20:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:379
+//line asn1.y:378
 		{
 			yyVAL.TagDefault = TAGS_EXPLICIT
 		}
 	case 21:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:382
+//line asn1.y:381
 		{
 			yyVAL.ExtensionDefault = true
 		}
 	case 22:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:383
+//line asn1.y:382
 		{
 			yyVAL.ExtensionDefault = false
 		}
 	case 23:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:386
+//line asn1.y:385
 		{
 			yyVAL.ModuleBody = ModuleBody{Imports: yyDollar[2].Imports, AssignmentList: yyDollar[3].AssignmentList}
 		}
 	case 24:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:387
+//line asn1.y:386
 		{
 			yyVAL.ModuleBody = ModuleBody{}
 		}
 	case 30:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:400
+//line asn1.y:399
 		{
 			yyVAL.Imports = yyDollar[2].Imports
 		}
 	case 31:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:401
+//line asn1.y:400
 		{
 			yyVAL.Imports = make([]SymbolsFromModule, 0)
 		}
 	case 32:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:404
+//line asn1.y:403
 		{
 			yyVAL.Imports = yyDollar[1].Imports
 		}
 	case 33:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:405
+//line asn1.y:404
 		{
 			yyVAL.Imports = make([]SymbolsFromModule, 0)
 		}
 	case 34:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:408
+//line asn1.y:407
 		{
 			yyVAL.Imports = append(make([]SymbolsFromModule, 0), yyDollar[1].SymbolsFromModule)
 		}
 	case 35:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:409
+//line asn1.y:408
 		{
 			yyVAL.Imports = append(yyDollar[1].Imports, yyDollar[2].SymbolsFromModule)
 		}
 	case 36:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:412
+//line asn1.y:411
 		{
 			yyVAL.SymbolsFromModule = SymbolsFromModule{yyDollar[1].SymbolList, yyDollar[3].GlobalModuleReference}
 		}
 	case 37:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:415
+//line asn1.y:414
 		{
 			yyVAL.GlobalModuleReference = GlobalModuleReference{yyDollar[1].name, yyDollar[2].Value}
 		}
 	case 38:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:418
+//line asn1.y:417
 		{
 			yyVAL.Value = yyDollar[1].ObjectIdentifierValue
 		}
 	case 39:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:419
+//line asn1.y:418
 		{
 			yyVAL.Value = yyDollar[1].DefinedValue
 		}
 	case 40:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:420
+//line asn1.y:419
 		{
 			yyVAL.Value = nil
 		}
 	case 41:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:423
+//line asn1.y:422
 		{
 			yyVAL.SymbolList = append(make([]Symbol, 0), yyDollar[1].Symbol)
 		}
 	case 42:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:424
+//line asn1.y:423
 		{
 			yyVAL.SymbolList = append(yyDollar[1].SymbolList, yyDollar[3].Symbol)
 		}
 	case 44:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:431
+//line asn1.y:430
 		{
 			yyVAL.Symbol = TypeReference(yyDollar[1].TypeReference)
 		}
 	case 45:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:432
+//line asn1.y:431
 		{
 			yyVAL.Symbol = ModuleReference(yyDollar[1].name)
 		}
 	case 46:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:433
+//line asn1.y:432
 		{
 			yyVAL.Symbol = ValueReference(yyDollar[1].ValueReference)
 		}
 	case 47:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:439
+//line asn1.y:438
 		{
 			yyVAL.AssignmentList = AssignmentList{yyDollar[1].Assignment}
 		}
 	case 48:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:440
+//line asn1.y:439
 		{
 			yyVAL.AssignmentList = append(yyDollar[1].AssignmentList, yyDollar[2].Assignment)
 		}
 	case 51:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:456
+//line asn1.y:455
 		{
 			yyVAL.Type = yyDollar[1].TypeReference
 		}
 	case 52:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:463
+//line asn1.y:462
 		{
 			yyVAL.DefinedValue = DefinedValue{}
 		}
 	case 53:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:471
+//line asn1.y:470
 		{
 			yyVAL.Assignment = TypeAssignment{yyDollar[1].TypeReference, yyDollar[3].Type}
 		}
 	case 54:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:474
+//line asn1.y:473
 		{
 			yyVAL.Assignment = ValueAssignment{yyDollar[1].ValueReference, yyDollar[2].Type, yyDollar[4].Value}
 		}
 	case 76:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:521
+//line asn1.y:520
 		{
 			yyVAL.NamedType = NamedType{Identifier: Identifier(yyDollar[1].name), Type: yyDollar[2].Type}
 		}
 	case 80:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:544
+//line asn1.y:543
 		{
 			yyVAL.Value = yyDollar[1].ObjectIdentifierValue
 		}
 	case 82:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:557
+//line asn1.y:556
 		{
 			yyVAL.Type = BooleanType{}
 		}
 	case 83:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:560
+//line asn1.y:559
 		{
 			yyVAL.Value = Boolean(true)
 		}
 	case 84:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:561
+//line asn1.y:560
 		{
 			yyVAL.Value = Boolean(false)
 		}
 	case 85:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:566
+//line asn1.y:565
 		{
 			yyVAL.Type = IntegerType{}
 		}
 	case 86:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:567
+//line asn1.y:566
 		{
 			yyVAL.Type = IntegerType{}
 		}
 	case 91:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:578
+//line asn1.y:577
 		{
 			yyVAL.Number = yyDollar[1].Number
 		}
 	case 92:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:579
+//line asn1.y:578
 		{
 			yyVAL.Number = yyDollar[2].Number.UnaryMinus()
 		}
 	case 93:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:584
+//line asn1.y:583
 		{
 			yyVAL.Value = yyDollar[1].Number
 		}
 	case 94:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:585
+//line asn1.y:584
 		{
 			yyVAL.Value = IdentifiedIntegerValue{Name: yyDollar[1].name}
 		}
 	case 95:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:590
+//line asn1.y:589
 		{
 			yyVAL.Type = EnumeratedType{}
 		}
 	case 105:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:613
+//line asn1.y:612
 		{
 			yyVAL.Type = RealType{}
 		}
 	case 108:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:622
+//line asn1.y:621
 		{
 			yyVAL.Value = yyDollar[1].Real
 		}
 	case 109:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:623
+//line asn1.y:622
 		{
 			yyVAL.Value = yyDollar[2].Real.UnaryMinus()
 		}
 	case 110:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:627
+//line asn1.y:626
 		{
 			yyVAL.Value = Real(math.Inf(1))
 		}
 	case 111:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:628
+//line asn1.y:627
 		{
 			yyVAL.Value = Real(math.Inf(-1))
 		}
 	case 112:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:632
+//line asn1.y:631
 		{
 			yyVAL.Real = parseRealNumber(yyDollar[1].Number, 0, 0)
 		}
 	case 113:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:633
+//line asn1.y:632
 		{
 			yyVAL.Real = parseRealNumber(yyDollar[1].Number, yyDollar[3].Number, 0)
 		}
 	case 114:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:634
+//line asn1.y:633
 		{
 			yyVAL.Real = parseRealNumber(yyDollar[1].Number, yyDollar[3].Number, yyDollar[5].Number)
 		}
 	case 115:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:635
+//line asn1.y:634
 		{
 			yyVAL.Real = parseRealNumber(yyDollar[1].Number, 0, yyDollar[3].Number)
 		}
 	case 117:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:639
+//line asn1.y:638
 		{
 			yyVAL.Number = Number(-int(yyDollar[2].Number))
 		}
 	case 118:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:644
+//line asn1.y:643
 		{
 			yyVAL.Type = BitStringType{}
 		}
 	case 119:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:645
+//line asn1.y:644
 		{
 			yyVAL.Type = BitStringType{NamedBits: yyDollar[4].NamedBitList}
 		}
 	case 120:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:648
+//line asn1.y:647
 		{
 			yyVAL.NamedBitList = append(make([]NamedBit, 0), yyDollar[1].NamedBit)
 		}
 	case 121:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:649
+//line asn1.y:648
 		{
 			yyVAL.NamedBitList = append(yyDollar[1].NamedBitList, yyDollar[3].NamedBit)
 		}
 	case 122:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:652
+//line asn1.y:651
 		{
 			yyVAL.NamedBit = NamedBit{Name: Identifier(yyDollar[1].name), Index: yyDollar[3].Number}
 		}
 	case 123:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:653
+//line asn1.y:652
 		{
 			yyVAL.NamedBit = NamedBit{Name: Identifier(yyDollar[1].name), Index: yyDollar[3].DefinedValue}
 		}
 	case 124:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:658
+//line asn1.y:657
 		{
 			yyVAL.Type = OctetStringType{}
 		}
 	case 125:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:663
+//line asn1.y:662
 		{
 			yyVAL.Type = NullType{}
 		}
 	case 126:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:668
+//line asn1.y:667
 		{
 			yyVAL.Type = SequenceType{}
 		}
 	case 127:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:669
+//line asn1.y:668
 		{
 			yyVAL.Type = SequenceType{}
 		}
 	case 128:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:670
+//line asn1.y:669
 		{
 			yyVAL.Type = SequenceType{Components: append(yyDollar[3].ComponentTypeLists.Components, yyDollar[3].ComponentTypeLists.TrailingComponents...), ExtensionAdditions: yyDollar[3].ComponentTypeLists.ExtensionAdditions}
 		}
 	case 133:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:682
+//line asn1.y:681
 		{
 			yyVAL.ComponentTypeLists = ComponentTypeLists{Components: yyDollar[1].ComponentTypeList}
 		}
 	case 134:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:683
+//line asn1.y:682
 		{
 			yyVAL.ComponentTypeLists = ComponentTypeLists{Components: yyDollar[1].ComponentTypeList, ExtensionAdditions: yyDollar[4].ExtensionAdditions}
 		}
 	case 135:
 		yyDollar = yyS[yypt-7 : yypt+1]
-//line asn1.y:684
+//line asn1.y:683
 		{
 			yyVAL.ComponentTypeLists = ComponentTypeLists{Components: yyDollar[1].ComponentTypeList, ExtensionAdditions: yyDollar[4].ExtensionAdditions, TrailingComponents: yyDollar[7].ComponentTypeList}
 		}
 	case 138:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:696
+//line asn1.y:695
 		{
 			yyVAL.ExtensionAdditions = yyDollar[2].ExtensionAdditions
 		}
 	case 139:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:697
+//line asn1.y:696
 		{
 			yyVAL.ExtensionAdditions = nil
 		}
 	case 140:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:700
+//line asn1.y:699
 		{
 			yyVAL.ExtensionAdditions = append([]ExtensionAddition{}, yyDollar[1].ExtensionAdditions...)
 		}
 	case 141:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:701
+//line asn1.y:700
 		{
 			yyVAL.ExtensionAdditions = append(yyDollar[1].ExtensionAdditions, yyDollar[3].ExtensionAdditions...)
 		}
 	case 142:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:704
+//line asn1.y:703
 		{
 			yyVAL.ExtensionAdditions = []ExtensionAddition{yyDollar[1].ComponentType}
 		}
 	case 143:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:705
+//line asn1.y:704
 		{
 			yyVAL.ExtensionAdditions = nil
 		}
 	case 147:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:714
+//line asn1.y:713
 		{
 			yyVAL.ComponentTypeList = append(make(ComponentTypeList, 0), yyDollar[1].ComponentType)
 		}
 	case 148:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:715
+//line asn1.y:714
 		{
 			yyVAL.ComponentTypeList = append(yyDollar[1].ComponentTypeList, yyDollar[3].ComponentType)
 		}
 	case 149:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:718
+//line asn1.y:717
 		{
 			yyVAL.ComponentType = NamedComponentType{NamedType: yyDollar[1].NamedType}
 		}
 	case 150:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:719
+//line asn1.y:718
 		{
 			yyVAL.ComponentType = NamedComponentType{NamedType: yyDollar[1].NamedType, IsOptional: true}
 		}
 	case 151:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:720
+//line asn1.y:719
 		{
 			yyVAL.ComponentType = NamedComponentType{NamedType: yyDollar[1].NamedType, Default: &yyDollar[3].Value}
 		}
 	case 152:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:721
+//line asn1.y:720
 		{
 			yyVAL.ComponentType = ComponentsOfComponentType{Type: yyDollar[3].Type}
 		}
 	case 153:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:726
+//line asn1.y:725
 		{
 			yyVAL.Type = SetType{}
 		}
 	case 154:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:727
+//line asn1.y:726
 		{
 			yyVAL.Type = SetType{}
 		}
 	case 155:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:728
+//line asn1.y:727
 		{
 			yyVAL.Type = SetType{Components: append(yyDollar[3].ComponentTypeLists.Components, yyDollar[3].ComponentTypeLists.TrailingComponents...), ExtensionAdditions: yyDollar[3].ComponentTypeLists.ExtensionAdditions}
 		}
 	case 156:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:733
+//line asn1.y:732
 		{
 			yyVAL.Type = SetOfType{yyDollar[3].Type}
 		}
 	case 157:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:734
+//line asn1.y:733
 		{
 			yyVAL.Type = SetOfType{yyDollar[3].NamedType}
 		}
 	case 158:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:738
+//line asn1.y:737
 		{
 			yyVAL.Type = AnyType{}
 		}
 	case 159:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:739
+//line asn1.y:738
 		{
 			yyVAL.Type = AnyType{Identifier(yyDollar[4].name)}
 		}
 	case 160:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:744
+//line asn1.y:743
 		{
 			yyVAL.Type = yyDollar[3].ChoiceType
 		}
 	case 161:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:747
+//line asn1.y:746
 		{
 			yyVAL.ChoiceType = ChoiceType{yyDollar[1].AlternativeTypeList, yyDollar[4].ExtensionAdditionAlternativesList}
 		}
 	case 162:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:748
+//line asn1.y:747
 		{
 			yyVAL.ChoiceType = ChoiceType{AlternativeTypeList: yyDollar[1].AlternativeTypeList}
 		}
 	case 163:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:749
+//line asn1.y:748
 		{
 			yyVAL.ChoiceType = ChoiceType{nil, yyDollar[2].ExtensionAdditionAlternativesList}
 		}
 	case 165:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:756
+//line asn1.y:755
 		{
 			yyVAL.ExtensionAdditionAlternativesList = yyDollar[2].ExtensionAdditionAlternativesList
 		}
 	case 166:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:757
+//line asn1.y:756
 		{
 			yyVAL.ExtensionAdditionAlternativesList = make([]ChoiceExtension, 0)
 		}
 	case 167:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:760
+//line asn1.y:759
 		{
 			yyVAL.ExtensionAdditionAlternativesList = append(make([]ChoiceExtension, 0), yyDollar[1].ExtensionAdditionAlternative)
 		}
 	case 168:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:761
+//line asn1.y:760
 		{
 			yyVAL.ExtensionAdditionAlternativesList = append(yyDollar[1].ExtensionAdditionAlternativesList, yyDollar[3].ExtensionAdditionAlternative)
 		}
 	case 169:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:765
+//line asn1.y:764
 		{
 			yyVAL.ExtensionAdditionAlternative = yyDollar[1].NamedType
 		}
 	case 171:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:772
+//line asn1.y:771
 		{
 			yyVAL.AlternativeTypeList = append(make([]NamedType, 0), yyDollar[1].NamedType)
 		}
 	case 172:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:773
+//line asn1.y:772
 		{
 			yyVAL.AlternativeTypeList = append(yyDollar[1].AlternativeTypeList, yyDollar[3].NamedType)
 		}
 	case 173:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:778
+//line asn1.y:777
 		{
 			yyVAL.Type = TaggedType{Tag: yyDollar[1].Tag, Type: yyDollar[2].Type}
 		}
 	case 174:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:779
+//line asn1.y:778
 		{
 			yyVAL.Type = TaggedType{Tag: yyDollar[1].Tag, Type: yyDollar[3].Type, TagType: TAGS_IMPLICIT, HasTagType: true}
 		}
 	case 175:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:780
+//line asn1.y:779
 		{
 			yyVAL.Type = TaggedType{Tag: yyDollar[1].Tag, Type: yyDollar[3].Type, TagType: TAGS_EXPLICIT, HasTagType: true}
 		}
 	case 176:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:783
+//line asn1.y:782
 		{
 			yyVAL.Tag = Tag{Class: yyDollar[2].Class, ClassNumber: yyDollar[3].Value}
 		}
 	case 177:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:786
+//line asn1.y:785
 		{
 			yyVAL.Value = yyDollar[1].Number
 		}
 	case 178:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:787
+//line asn1.y:786
 		{
 			yyVAL.Value = yyDollar[1].DefinedValue
 		}
 	case 179:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:790
+//line asn1.y:789
 		{
 			yyVAL.Class = CLASS_UNIVERSAL
 		}
 	case 180:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:791
+//line asn1.y:790
 		{
 			yyVAL.Class = CLASS_APPLICATION
 		}
 	case 181:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:792
+//line asn1.y:791
 		{
 			yyVAL.Class = CLASS_PRIVATE
 		}
 	case 182:
 		yyDollar = yyS[yypt-0 : yypt+1]
-//line asn1.y:793
+//line asn1.y:792
 		{
 			yyVAL.Class = CLASS_CONTEXT_SPECIFIC
 		}
 	case 183:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:798
+//line asn1.y:797
 		{
 			yyVAL.Type = SequenceOfType{yyDollar[3].Type}
 		}
 	case 184:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:799
+//line asn1.y:798
 		{
 			yyVAL.Type = SequenceOfType{yyDollar[3].NamedType}
 		}
 	case 185:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:804
+//line asn1.y:803
 		{
 			yyVAL.Type = ObjectIdentifierType{}
 		}
 	case 186:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:809
+//line asn1.y:808
 		{
 			yyVAL.ObjectIdentifierValue = yyDollar[2].ObjectIdentifierValue
 		}
 	case 187:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:810
+//line asn1.y:809
 		{
-			yyVAL.ObjectIdentifierValue = NewObjectIdentifierValue(yyDollar[2].DefinedValue).Append(yyDollar[3].ObjectIdentifierValue...)
+			yyVAL.ObjectIdentifierValue = append(ObjectIdentifierValue{ObjectIdElement{Reference: &yyDollar[2].DefinedValue}}, yyDollar[3].ObjectIdentifierValue...)
 		}
 	case 188:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:813
+//line asn1.y:812
 		{
-			yyVAL.ObjectIdentifierValue = NewObjectIdentifierValue(yyDollar[1].ObjIdComponents)
+			yyVAL.ObjectIdentifierValue = ObjectIdentifierValue{yyDollar[1].ObjectIdElement}
 		}
 	case 189:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:814
+//line asn1.y:813
 		{
-			yyVAL.ObjectIdentifierValue = NewObjectIdentifierValue(yyDollar[1].ObjIdComponents).Append(yyDollar[2].ObjectIdentifierValue...)
+			yyVAL.ObjectIdentifierValue = append(ObjectIdentifierValue{yyDollar[1].ObjectIdElement}, yyDollar[2].ObjectIdentifierValue...)
 		}
 	case 190:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:817
+//line asn1.y:816
 		{
-			yyVAL.ObjIdComponents = ObjectIdElement{Name: yyDollar[1].name}
+			yyVAL.ObjectIdElement = ObjectIdElement{Name: yyDollar[1].name}
 		}
 	case 193:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:820
+//line asn1.y:819
 		{
-			yyVAL.ObjIdComponents = yyDollar[1].DefinedValue
+			cpy := yyDollar[1].DefinedValue
+			yyVAL.ObjectIdElement = ObjectIdElement{Reference: &cpy}
 		}
 	case 194:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:823
+//line asn1.y:822
 		{
-			yyVAL.ObjIdComponents = ObjectIdElement{Id: yyDollar[1].Number.IntValue()}
+			yyVAL.ObjectIdElement = ObjectIdElement{ID: yyDollar[1].Number.IntValue()}
 		}
 	case 195:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:824
+//line asn1.y:823
 		{
-			yyVAL.ObjIdComponents = yyDollar[1].DefinedValue
+			cpy := yyDollar[1].DefinedValue
+			yyVAL.ObjectIdElement = ObjectIdElement{Reference: &cpy}
 		}
 	case 196:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:828
+//line asn1.y:827
 		{
-			switch v := yyDollar[3].ObjIdComponents.(type) {
-			case DefinedValue:
-				yyVAL.ObjIdComponents = ObjectIdElement{Name: yyDollar[1].name, Reference: &v}
-			case ObjectIdElement:
-				yyVAL.ObjIdComponents = ObjectIdElement{Name: yyDollar[1].name, Id: v.Id}
-			default:
-				panic(fmt.Sprintf("Expected DefinedValue or ObjectIdElement from NumberForm, got %v", yyDollar[3].ObjIdComponents))
-			}
+			yyVAL.ObjectIdElement = ObjectIdElement{Name: yyDollar[1].name, ID: yyDollar[3].ObjectIdElement.ID, Reference: yyDollar[3].ObjectIdElement.Reference}
 		}
 	case 200:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:849
+//line asn1.y:839
 		{
 			yyVAL.Type = RestrictedStringType{LexType: BMPString}
 		}
 	case 201:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:850
+//line asn1.y:840
 		{
 			yyVAL.Type = RestrictedStringType{LexType: GeneralString}
 		}
 	case 202:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:851
+//line asn1.y:841
 		{
 			yyVAL.Type = RestrictedStringType{LexType: GraphicString}
 		}
 	case 203:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:852
+//line asn1.y:842
 		{
 			yyVAL.Type = RestrictedStringType{LexType: IA5String}
 		}
 	case 204:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:853
+//line asn1.y:843
 		{
 			yyVAL.Type = RestrictedStringType{LexType: ISO646String}
 		}
 	case 205:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:854
+//line asn1.y:844
 		{
 			yyVAL.Type = RestrictedStringType{LexType: NumericString}
 		}
 	case 206:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:855
+//line asn1.y:845
 		{
 			yyVAL.Type = RestrictedStringType{LexType: PrintableString}
 		}
 	case 207:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:856
+//line asn1.y:846
 		{
 			yyVAL.Type = RestrictedStringType{LexType: TeletexString}
 		}
 	case 208:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:857
+//line asn1.y:847
 		{
 			yyVAL.Type = RestrictedStringType{LexType: T61String}
 		}
 	case 209:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:858
+//line asn1.y:848
 		{
 			yyVAL.Type = RestrictedStringType{LexType: UniversalString}
 		}
 	case 210:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:859
+//line asn1.y:849
 		{
 			yyVAL.Type = RestrictedStringType{LexType: UTF8String}
 		}
 	case 211:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:860
+//line asn1.y:850
 		{
 			yyVAL.Type = RestrictedStringType{LexType: VideotexString}
 		}
 	case 212:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:861
+//line asn1.y:851
 		{
 			yyVAL.Type = RestrictedStringType{LexType: VisibleString}
 		}
 	case 213:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:866
+//line asn1.y:856
 		{
 			yyVAL.Type = CharacterStringType{}
 		}
 	case 214:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:871
+//line asn1.y:861
 		{
 			yyVAL.Type = TypeReference("GeneralizedTime")
 		}
 	case 215:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:872
+//line asn1.y:862
 		{
 			yyVAL.Type = TypeReference("UTCTime")
 		}
 	case 216:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:877
+//line asn1.y:867
 		{
 			yyVAL.Type = ConstraintedType{yyDollar[1].Type, yyDollar[2].Constraint}
 		}
 	case 218:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:883
+//line asn1.y:873
 		{
 			yyVAL.Type = ConstraintedType{SetOfType{yyDollar[4].Type}, yyDollar[2].Constraint}
 		}
 	case 219:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:884
+//line asn1.y:874
 		{
 			yyVAL.Type = ConstraintedType{SetOfType{yyDollar[4].Type}, SingleElementConstraint(yyDollar[2].Elements)}
 		}
 	case 220:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:885
+//line asn1.y:875
 		{
 			yyVAL.Type = ConstraintedType{SequenceOfType{yyDollar[4].Type}, yyDollar[2].Constraint}
 		}
 	case 221:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:886
+//line asn1.y:876
 		{
 			yyVAL.Type = ConstraintedType{SequenceOfType{yyDollar[4].Type}, SingleElementConstraint(yyDollar[2].Elements)}
 		}
 	case 222:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:887
+//line asn1.y:877
 		{
 			yyVAL.Type = ConstraintedType{SetOfType{yyDollar[4].NamedType}, yyDollar[2].Constraint}
 		}
 	case 223:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:888
+//line asn1.y:878
 		{
 			yyVAL.Type = ConstraintedType{SetOfType{yyDollar[4].NamedType}, SingleElementConstraint(yyDollar[2].Elements)}
 		}
 	case 224:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:889
+//line asn1.y:879
 		{
 			yyVAL.Type = ConstraintedType{SequenceOfType{yyDollar[4].NamedType}, yyDollar[2].Constraint}
 		}
 	case 225:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:890
+//line asn1.y:880
 		{
 			yyVAL.Type = ConstraintedType{SequenceOfType{yyDollar[4].NamedType}, SingleElementConstraint(yyDollar[2].Elements)}
 		}
 	case 226:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line asn1.y:895
+//line asn1.y:885
 		{
 			yyVAL.Constraint = Constraint{ConstraintSpec: yyDollar[2].ConstraintSpec}
 		}
 	case 227:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:898
+//line asn1.y:888
 		{
 			yyVAL.ConstraintSpec = yyDollar[1].SubtypeConstraint
 		}
 	case 230:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:908
+//line asn1.y:898
 		{
 			yyVAL.SubtypeConstraint = yyDollar[1].SubtypeConstraint
 		}
 	case 231:
 		yyDollar = yyS[yypt-5 : yypt+1]
-//line asn1.y:909
+//line asn1.y:899
 		{
 			yyVAL.SubtypeConstraint = append(yyDollar[1].SubtypeConstraint, yyDollar[5].ElementSetSpec)
 		}
 	case 232:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:912
+//line asn1.y:902
 		{
 			yyVAL.SubtypeConstraint = SubtypeConstraint{yyDollar[1].ElementSetSpec}
 		}
 	case 234:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:918
+//line asn1.y:908
 		{
 			yyVAL.ElementSetSpec = yyDollar[1].Unions
 		}
 	case 235:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:919
+//line asn1.y:909
 		{
 			yyVAL.ElementSetSpec = yyDollar[2].Exclusions
 		}
 	case 236:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:922
+//line asn1.y:912
 		{
 			yyVAL.Unions = Unions{yyDollar[1].Intersections}
 		}
 	case 237:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:923
+//line asn1.y:913
 		{
 			yyVAL.Unions = append(yyDollar[1].Unions, yyDollar[3].Intersections)
 		}
 	case 239:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:929
+//line asn1.y:919
 		{
 			yyVAL.Intersections = Intersections{yyDollar[1].IntersectionElements}
 		}
 	case 240:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:930
+//line asn1.y:920
 		{
 			yyVAL.Intersections = append(yyDollar[1].Intersections, yyDollar[3].IntersectionElements)
 		}
 	case 242:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:936
+//line asn1.y:926
 		{
 			yyVAL.IntersectionElements = IntersectionElements{Elements: yyDollar[1].Elements}
 		}
 	case 243:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:937
+//line asn1.y:927
 		{
 			yyVAL.IntersectionElements = IntersectionElements{Elements: yyDollar[1].Elements, Exclusions: yyDollar[2].Exclusions}
 		}
 	case 245:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:943
+//line asn1.y:933
 		{
 			yyVAL.Exclusions = Exclusions{yyDollar[2].Elements}
 		}
 	case 250:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:952
+//line asn1.y:942
 		{
 			yyVAL.Elements = yyDollar[1].Elements
 		}
 	case 251:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:954
+//line asn1.y:944
 		{
 			yyVAL.Elements = yyDollar[2].ElementSetSpec
 		}
 	case 257:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:969
+//line asn1.y:959
 		{
 			yyVAL.Elements = SingleValue{yyDollar[1].Value}
 		}
 	case 258:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:974
+//line asn1.y:964
 		{
 			yyVAL.Elements = ValueRange{yyDollar[1].RangeEndpoint, yyDollar[3].RangeEndpoint}
 		}
 	case 259:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:977
+//line asn1.y:967
 		{
 			yyVAL.RangeEndpoint = RangeEndpoint{Value: yyDollar[1].Value}
 		}
 	case 260:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:978
+//line asn1.y:968
 		{
 			yyVAL.RangeEndpoint = RangeEndpoint{Value: yyDollar[1].Value, IsOpen: true}
 		}
 	case 261:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:981
+//line asn1.y:971
 		{
 			yyVAL.RangeEndpoint = RangeEndpoint{Value: yyDollar[1].Value}
 		}
 	case 262:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:982
+//line asn1.y:972
 		{
 			yyVAL.RangeEndpoint = RangeEndpoint{Value: yyDollar[2].Value, IsOpen: true}
 		}
 	case 264:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:986
+//line asn1.y:976
 		{
 			yyVAL.Value = nil
 		}
 	case 266:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:990
+//line asn1.y:980
 		{
 			yyVAL.Value = nil
 		}
 	case 267:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line asn1.y:995
+//line asn1.y:985
 		{
 			yyVAL.Elements = SizeConstraint{yyDollar[2].Constraint}
 		}
 	case 268:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line asn1.y:1000
+//line asn1.y:990
 		{
 			yyVAL.Elements = TypeConstraint{yyDollar[1].Type}
 		}
 	case 269:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:1005
+//line asn1.y:995
 		{
 			yyVAL.Elements = InnerTypeConstraint{}
 		}
 	case 270:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line asn1.y:1006
+//line asn1.y:996
 		{
 			yyVAL.Elements = InnerTypeConstraint{}
 		}

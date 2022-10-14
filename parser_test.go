@@ -103,40 +103,19 @@ func TestValueAssignmentOID(t *testing.T) {
 	`
 	r := testNotFails(t, content)
 	assignments := r.ModuleBody.AssignmentList
-	if len(assignments) != 1 {
-		t.Fatalf("Expected 1 assignment to be parsed, got %v", len(assignments))
+	expected := AssignmentList{
+		ValueAssignment{
+			ValueReference: ValueReference("id-krb5"),
+			Type:           ObjectIdentifierType{},
+			Value: ObjectIdentifierValue{
+				{Name: "name-form"},
+				{ID: 42},
+				{Name: "name-and-number-form", ID: 77},
+			},
+		},
 	}
-	krb := assignments.GetValue("id-krb5")
-	if krb == nil {
-		t.Fatal("Expected assignment with name id-krb5 to exist, got nil")
-	}
-	if krb.ValueReference.Name() != "id-krb5" {
-		t.Errorf("Expected assignment LHS to be id-krb5, got %v", krb.ValueReference.Name())
-	}
-	if krb.Type != (ObjectIdentifierType{}) {
-		t.Errorf("Expected value to be of OID type, got %v", krb.Type)
-	}
-	switch v := krb.Value.(type) {
-	case ObjectIdentifierValue:
-		if v.Type() != krb.Type {
-			t.Errorf("Expected assignment value to have same type as assignment itself, got %v != %v", v.Type(), krb.Type)
-		}
-		expected := []ObjectIdElement{
-			{Name: "name-form"},
-			{Id: 42},
-			{Name: "name-and-number-form", Id: 77},
-		}
-		if len(expected) != len(v) {
-			t.Fatalf("Expected %v elements, got %v", len(expected), len(v))
-		}
-		for i, el := range v {
-			expectedEl := expected[i]
-			if el != expectedEl {
-				t.Errorf("Expected %v element to be %v, got %v", i, expectedEl, el)
-			}
-		}
-	default:
-		t.Errorf("Expected ObjectIdentifierValue, got %t", v)
+	if diff := cmp.Diff(expected, assignments); diff != "" {
+		t.Errorf("Assignments did not match expected, diff (-want, +got): %v", diff)
 	}
 	// TODO test DefinedValue
 }
