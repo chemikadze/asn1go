@@ -10,30 +10,41 @@ import (
 	"strings"
 )
 
+// CodeGenerator is an interface for code generation from ASN.1 modules.
 type CodeGenerator interface {
 	Generate(module ModuleDefinition, writer io.Writer) error
 }
 
+// GenParams is code generator configuration.
 type GenParams struct {
-	Package     string
-	Prefix      string
-	Type        GenType
+	// Package is go package name.
+	// If not specified, ASN.1 module name will be used to derive go module name.
+	Package string
+	// Type is a type of code generation to run.
+	// TODO: deprecate in favor of separate New methods.
+	Type GenType
+	// IntegerRepr controls how INTEGER type is expressed in generated go code.
 	IntegerRepr IntegerRepr
 }
 
+// GenType is code generator type.
 type GenType int
 
 const (
+	// GEN_DECLARATIONS is code generator that is
 	GEN_DECLARATIONS GenType = iota
 )
 
+// IntegerRepr is enum controlling how INTEGER is represented.
 type IntegerRepr string
 
+// IntegerRepr modes supported.
 const (
 	IntegerReprInt64  IntegerRepr = "int64"
 	IntegerReprBigInt IntegerRepr = "big.Int"
 )
 
+// NewCodeGenerator creates a new code generator from provided params.
 func NewCodeGenerator(params GenParams) CodeGenerator {
 	if params.IntegerRepr == "" {
 		params.IntegerRepr = IntegerReprInt64
@@ -50,13 +61,18 @@ type declCodeGen struct {
 	Params GenParams
 }
 
+// moduleContext is context used to track state of the code generation.
 type moduleContext struct {
 	extensibilityImplied bool
-	tagDefault           int
-	errors               []error
-	lookupContext        ModuleBody
-	requiredModules      []string
-	params               GenParams
+	// tagDefault is a ModuleDefinition.TagDefault value.
+	tagDefault int
+	// errors collected during conversion.
+	// TODO: switch to explicit error passing.
+	errors        []error
+	lookupContext ModuleBody
+	// requiredModules holds go modules required by generated code.
+	requiredModules []string
+	params          GenParams
 }
 
 func (ctx *moduleContext) appendError(err error) {
@@ -72,13 +88,13 @@ func (ctx *moduleContext) requireModule(module string) {
 	ctx.requiredModules = append(ctx.requiredModules, module)
 }
 
-// Generate declarations from module.
+// Generate declarations from module to be used together with encoding/asn1.
 //
 // Feature support status:
 // - [x] ModuleIdentifier
-// - [ ] TagDefault
+// - [x] TagDefault (except AUTOMATIC)
 // - [ ] ExtensibilityImplied
-// - [.] ModuleBody -- see generateDeclarations
+// - [.] ModuleBody -- see moduleContext.generateDeclarations.
 func (gen declCodeGen) Generate(module ModuleDefinition, writer io.Writer) error {
 	if module.TagDefault == TAGS_AUTOMATIC {
 		// See x.680, section 12.3. It implies certain transformations to component and alternative lists that are not implemented.
@@ -119,7 +135,7 @@ func goifyName(name string) string {
 	return strings.Title(strings.Replace(name, "-", "_", -1))
 }
 
-// generateDeclarations based on ModuleBody of module
+// generateDeclarations produces go declarations based on ModuleBody of module.
 //
 // Feature support status:
 // - [.] AssignmentList

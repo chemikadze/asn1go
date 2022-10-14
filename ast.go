@@ -7,7 +7,8 @@ import "encoding/asn1"
 // if not specified otherwise.
 // See: X.680, section 12.
 type ModuleDefinition struct {
-	ModuleIdentifier     ModuleIdentifier
+	ModuleIdentifier ModuleIdentifier
+	// TagDefault is default tagging behavior, one of TAGS_ constants.
 	TagDefault           int
 	ExtensibilityImplied bool
 	ModuleBody           ModuleBody
