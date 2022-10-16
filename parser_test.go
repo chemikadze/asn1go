@@ -697,3 +697,137 @@ func TestChoiceSyntax(t *testing.T) {
 		})
 	}
 }
+
+func TestEnumerationSyntax(t *testing.T) {
+	testCases := []struct {
+		name       string
+		content    string
+		expected   AssignmentList
+		skipReason string
+	}{
+		{
+			name: "enumeration with elements",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Enum ::= ENUMERATED {
+					anon1, named1(1), anon2, named2(2)
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Enum", Type: EnumeratedType{RootEnumeration: []EnumerationItem{
+					Identifier("anon1"),
+					NamedNumber{Name: Identifier("named1"), Value: Number(1)},
+					Identifier("anon2"),
+					NamedNumber{Name: Identifier("named2"), Value: Number(2)},
+				}}},
+			},
+		},
+		{
+			name:       "enumeration with references",
+			skipReason: "defined value is not implemented yet",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Enum ::= ENUMERATED {
+					anon1, named1(ref1), anon2, named2(ModuleRef.ref2)
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Enum", Type: EnumeratedType{RootEnumeration: []EnumerationItem{
+					Identifier("anon1"),
+					NamedNumber{Name: Identifier("named1"), Value: DefinedValue{}},
+					Identifier("anon2"),
+					NamedNumber{Name: Identifier("named2"), Value: DefinedValue{}},
+				}}},
+			},
+		},
+		{
+			name:       "enumeration with extensibility",
+			skipReason: "Conflict in yacc rules",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Enum1 ::= ENUMERATED {
+					anon1, anon2, ...
+				}
+				Enum2 ::= ENUMERATED {
+					anon1, anon2, ..., anon3
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Enum1", Type: EnumeratedType{RootEnumeration: []EnumerationItem{
+					Identifier("anon1"),
+					Identifier("anon2"),
+				}}},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
+			}
+			r := testNotFails(t, tc.content)
+			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
+				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+			}
+		})
+	}
+}
+
+func TestIntegerSyntax(t *testing.T) {
+	testCases := []struct {
+		name       string
+		content    string
+		expected   AssignmentList
+		skipReason string
+	}{
+		{
+			name: "simple integers",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				Int ::= INTEGER
+				IntWithNames ::= INTEGER {
+					a(1), b(-1)
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "Int", Type: IntegerType{}},
+				TypeAssignment{TypeReference: "IntWithNames", Type: IntegerType{NamedNumberList: []NamedNumber{
+					{Name: Identifier("a"), Value: Number(1)},
+					{Name: Identifier("b"), Value: Number(-1)},
+				}}},
+			},
+		},
+		{
+			name:       "integers with references",
+			skipReason: "definedvalue is not implemented",
+			content: `
+			TestSpec DEFINITIONS ::= BEGIN
+				IntWithNames ::= INTEGER {
+					a(valRef), b(Module.valRef)
+				}
+			END
+			`,
+			expected: AssignmentList{
+				TypeAssignment{TypeReference: "IntWithNames", Type: IntegerType{NamedNumberList: []NamedNumber{
+					{Name: Identifier("a"), Value: DefinedValue{}},
+					{Name: Identifier("b"), Value: DefinedValue{}},
+				}}},
+			},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.skipReason != "" {
+				t.Skip(tc.skipReason)
+			}
+			r := testNotFails(t, tc.content)
+			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
+				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+			}
+		})
+	}
+}

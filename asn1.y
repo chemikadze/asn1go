@@ -63,6 +63,11 @@ import (
     ExtensionAdditionAlternative ChoiceExtension
     ExtensionAdditionAlternativesList []ChoiceExtension
     ExtensionAdditions []ExtensionAddition
+    NamedNumberList []NamedNumber
+    NamedNumber NamedNumber
+    EnumeratedType EnumeratedType
+    Enumeration []EnumerationItem
+    EnumerationItem EnumerationItem
 }
 
 %token WHITESPACE
@@ -307,6 +312,11 @@ import (
 %type <ExtensionAdditions> ExtensionAdditions
 %type <ExtensionAdditions> ExtensionAdditionList
 %type <ExtensionAdditions> ExtensionAddition
+%type <NamedNumber> NamedNumber
+%type <NamedNumberList> NamedNumberList
+%type <EnumeratedType> Enumerations
+%type <Enumeration> Enumeration RootEnumeration AdditionalEnumeration
+%type <EnumerationItem> EnumerationItem
 
 //
 // end declarations
@@ -563,15 +573,15 @@ BooleanValue : TRUE  { $$ = Boolean(true) }
 // 18.1
 
 IntegerType : INTEGER  { $$ = IntegerType{} }
-            | INTEGER OPEN_CURLY NamedNumberList CLOSE_CURLY  { $$ = IntegerType{} }    // TODO support NamedNumberList
+            | INTEGER OPEN_CURLY NamedNumberList CLOSE_CURLY  { $$ = IntegerType{$3} }
 ;
 
-NamedNumberList : NamedNumber
-                | NamedNumberList COMMA NamedNumber
+NamedNumberList : NamedNumber  { $$ = []NamedNumber{$1} }
+                | NamedNumberList COMMA NamedNumber  { $$ = append($1, $3) }
 ;
 
-NamedNumber : identifier OPEN_ROUND SignedNumber CLOSE_ROUND
-          | identifier OPEN_ROUND DefinedValue CLOSE_ROUND
+NamedNumber : identifier OPEN_ROUND SignedNumber CLOSE_ROUND  { $$ = NamedNumber{Identifier($1), $3} }
+          | identifier OPEN_ROUND DefinedValue CLOSE_ROUND  { $$ = NamedNumber{Identifier($1), $3} }
 ;
 
 SignedNumber : NUMBER  { $$ = $1 }
@@ -586,12 +596,12 @@ IntegerValue : SignedNumber  { $$ = $1 }
 
 // 19.1
 
-EnumeratedType : ENUMERATED OPEN_CURLY Enumerations CLOSE_CURLY  { $$ = EnumeratedType{} }
+EnumeratedType : ENUMERATED OPEN_CURLY Enumerations CLOSE_CURLY  { $$ = $3 }
 ;
 
-Enumerations : RootEnumeration
-             | RootEnumeration COMMA ELLIPSIS ExceptionSpec
-             | RootEnumeration COMMA ELLIPSIS ExceptionSpec COMMA AdditionalEnumeration
+Enumerations : RootEnumeration  { $$ = EnumeratedType{RootEnumeration: $1} }
+             | RootEnumeration COMMA ELLIPSIS ExceptionSpec  { $$ = EnumeratedType{RootEnumeration: $1} }
+             | RootEnumeration COMMA ELLIPSIS ExceptionSpec COMMA AdditionalEnumeration  { $$ = EnumeratedType{RootEnumeration: $1, AdditionalEnumeration: $6} }
 
 RootEnumeration : Enumeration
 ;
@@ -599,12 +609,12 @@ RootEnumeration : Enumeration
 AdditionalEnumeration : Enumeration
 ;
 
-Enumeration : EnumerationItem
-            | EnumerationItem COMMA Enumeration
+Enumeration : EnumerationItem  { $$ = []EnumerationItem{$1} }
+            | EnumerationItem COMMA Enumeration  { $$ = append([]EnumerationItem{$1}, $3...) }
 ;
 
-EnumerationItem : NamedNumber
-                | identifier
+EnumerationItem : NamedNumber  { $$ = $1 }
+                | identifier  { $$ = Identifier($1) }
 ;
 
 // 20.1

@@ -203,6 +203,8 @@ func (id Identifier) Name() string {
 	return string(id)
 }
 
+func (Identifier) isEnumerationItem() {}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Values
 
@@ -220,6 +222,8 @@ func (x Number) IntValue() int {
 func (Number) Type() Type {
 	return IntegerType{}
 }
+
+func (Number) isNamedNumberValue() {}
 
 // UnaryMinus returns negated Number.
 func (x Number) UnaryMinus() Number {
@@ -273,7 +277,21 @@ func (ObjectIdentifierType) isType() {}
 
 // IntegerType is an ast representation of INTEGER type.
 type IntegerType struct {
-	NamedNumberList map[string]int
+	NamedNumberList []NamedNumber
+}
+
+// NamedNumber is number with name.
+// It is mainly used as Enumerated and Integer definitions.
+type NamedNumber struct {
+	Name  Identifier
+	Value NamedNumberValue
+}
+
+func (NamedNumber) isEnumerationItem() {}
+
+// NamedNumberValue signifies that value can be a value of named number.
+type NamedNumberValue interface {
+	isNamedNumberValue()
 }
 
 // Zero implelents Type.
@@ -282,6 +300,15 @@ func (IntegerType) isType() {}
 // EnumeratedType is an ast representation of ENUMERATED type.
 // TODO: implement enumerations properly.
 type EnumeratedType struct {
+	// Alternatives of the enumeration.
+	RootEnumeration       []EnumerationItem
+	AdditionalEnumeration []EnumerationItem
+}
+
+// EnumerationItem is interface for items.
+// It can be NamedNumber of Identifier.
+type EnumerationItem interface {
+	isEnumerationItem()
 }
 
 // Zero implements Type.
@@ -648,6 +675,8 @@ type DefinedValue struct{}
 func (DefinedValue) Type() Type {
 	return nil
 }
+
+func (DefinedValue) isNamedNumberValue() {}
 
 // IdentifiedIntegerValue is named value defined for the type.
 // TODO: use of these in assignments is not implemented.

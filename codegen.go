@@ -187,6 +187,7 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Ex
 	case BooleanType:
 		return goast.NewIdent("bool")
 	case IntegerType:
+		// TODO: generate consts
 		switch ctx.params.IntegerRepr {
 		case IntegerReprInt64:
 			return goast.NewIdent("int64") // TODO signed, unsigned, range constraints
@@ -232,6 +233,7 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Ex
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.BitString")
 	case EnumeratedType:
+		// TODO: generate consts
 		ctx.requireModule("encoding/asn1")
 		return goast.NewIdent("asn1.Enumerated")
 	case AnyType:
