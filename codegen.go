@@ -269,8 +269,10 @@ func (ctx *moduleContext) generateAssociatedValuesIfNeeded(reference TypeReferen
 					valueExpr = &goast.CallExpr{Fun: goast.NewIdent("big.NewInt"), Args: []goast.Expr{valueExpr}}
 				}
 			case DefinedValue:
-				ctx.appendError(fmt.Errorf("can't generate const for %v.%v: defined values not supported", reference, namedNumber.Name))
-				return nil
+				if v.ModuleName != "" {
+					ctx.appendError(fmt.Errorf("%v.%v: value references from other modules are not supported", v.ModuleName, v.ValueName))
+				}
+				valueExpr = valueRefToIdent(v.ValueName)
 			}
 			typeName := goifyName(string(reference))
 			specs = append(specs, &goast.ValueSpec{
@@ -286,6 +288,10 @@ func (ctx *moduleContext) generateAssociatedValuesIfNeeded(reference TypeReferen
 	default:
 		return nil
 	}
+}
+
+func valueRefToIdent(ref ValueReference) *goast.Ident {
+	return goast.NewIdent("Val" + goifyName(string(ref)))
 }
 
 func (ctx *moduleContext) generateChoiceType(t ChoiceType, isSet *bool) goast.Expr {

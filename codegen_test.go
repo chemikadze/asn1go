@@ -285,7 +285,8 @@ type Int = int64
 	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
 		Int ::= INTEGER {
 			a(42),
-			b(-1)
+			b(-1),
+			c(d)
 		}
 	END
 	`,
@@ -296,6 +297,7 @@ type Int = int64
 var (
 	IntValA Int = 42
 	IntValB Int = -1
+	IntValC Int = ValD
 )
 `,
 		},
