@@ -1,6 +1,6 @@
 package asn1go
 
-// ModuleDefinition represents ASN.1 Module.
+// ModuleDefinition represents ASN.1 ModuleName.
 // This and all other AST types are named according to their BNF in X.680 document,
 // if not specified otherwise.
 // See: X.680, section 12.
@@ -35,7 +35,7 @@ const (
 )
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Module body
+// ModuleName body
 
 // ModuleBody holds module body.
 // TODO: implement Exports.
@@ -668,8 +668,13 @@ type Value interface {
 }
 
 // DefinedValue represents value reference.
-// TODO: implement properly.
-type DefinedValue struct{}
+type DefinedValue struct {
+	// ModuleName, if non-empty, specifies module where value was defined.
+	ModuleName ModuleReference
+	// ValueName is name of the value.
+	// It should always be provided.
+	ValueName ValueReference
+}
 
 // Type implements Value.
 func (DefinedValue) Type() Type {
@@ -708,8 +713,7 @@ type ObjectIdElement struct {
 	// ID is set in Number or NameAndNumber form, if number is specified as number literal.
 	ID int
 	// Reference is set in NameAndNumber form, when number is provided as DefinedValue.
-	// TODO: not implemented in .y file.
-	// TODO: DefinedValue or identifier in Name seem to be context specific, collapse?
+	// NameForm is always parsed as Reference.
 	Reference *DefinedValue
 }
 

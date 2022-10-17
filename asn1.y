@@ -469,11 +469,20 @@ DefinedType : // ExternalTypeReference
 
 // 13.3
 
-DefinedValue : "t" "o" "d" "o"  { $$ = DefinedValue{} }
-// ExternalValueReference
-// | Valuereference
+DefinedValue :
+   modulereference DOT valuereference  { $$ = DefinedValue{ModuleReference($1), $3} }
+   | valuereference  { $$ = DefinedValue{ValueName: $1} }
 // | ParameterizedValue
-//;
+;
+
+// 13.6
+
+// Not used, defined inline in DefinedValue to simplicy and avoid yacc conflicts.
+// ExternalValueReference ::=
+//    modulereference
+//    "."
+//    valuereference
+
 
 // 15.1
 

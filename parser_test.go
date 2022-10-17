@@ -108,7 +108,7 @@ func TestValueAssignmentOID(t *testing.T) {
 			ValueReference: ValueReference("id-krb5"),
 			Type:           ObjectIdentifierType{},
 			Value: ObjectIdentifierValue{
-				{Name: "name-form"},
+				{Reference: &DefinedValue{ValueName: "name-form"}},
 				{ID: 42},
 				{Name: "name-and-number-form", ID: 77},
 			},
@@ -481,7 +481,7 @@ func TestAnyType(t *testing.T) {
 	}
 	r := testNotFails(t, content)
 	if diff := cmp.Diff(expectedDecls, r.ModuleBody.AssignmentList); diff != "" {
-		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+		t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 	}
 }
 
@@ -501,7 +501,7 @@ func TestDefaultTags(t *testing.T) {
 	}
 	r := testNotFails(t, content)
 	if diff := cmp.Diff(expectedDecls, r.ModuleBody.AssignmentList); diff != "" {
-		t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+		t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 	}
 }
 
@@ -616,7 +616,7 @@ func TestSequenceSyntax(t *testing.T) {
 			}
 			r := testNotFails(t, tc.content)
 			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
-				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+				t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})
 	}
@@ -692,7 +692,7 @@ func TestChoiceSyntax(t *testing.T) {
 			}
 			r := testNotFails(t, tc.content)
 			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
-				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+				t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})
 	}
@@ -770,7 +770,7 @@ func TestEnumerationSyntax(t *testing.T) {
 			}
 			r := testNotFails(t, tc.content)
 			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
-				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+				t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})
 	}
@@ -802,19 +802,19 @@ func TestIntegerSyntax(t *testing.T) {
 			},
 		},
 		{
-			name:       "integers with references",
-			skipReason: "definedvalue is not implemented",
+			name: "integers with references",
+			//skipReason: "definedvalue is not implemented",
 			content: `
 			TestSpec DEFINITIONS ::= BEGIN
 				IntWithNames ::= INTEGER {
-					a(valRef), b(Module.valRef)
+					a(valRef), b(ModuleName.valRef)
 				}
 			END
 			`,
 			expected: AssignmentList{
 				TypeAssignment{TypeReference: "IntWithNames", Type: IntegerType{NamedNumberList: []NamedNumber{
-					{Name: Identifier("a"), Value: DefinedValue{}},
-					{Name: Identifier("b"), Value: DefinedValue{}},
+					{Name: Identifier("a"), Value: DefinedValue{ValueName: "valRef"}},
+					{Name: Identifier("b"), Value: DefinedValue{ModuleName: "ModuleName", ValueName: "valRef"}},
 				}}},
 			},
 		},
@@ -826,7 +826,7 @@ func TestIntegerSyntax(t *testing.T) {
 			}
 			r := testNotFails(t, tc.content)
 			if diff := cmp.Diff(tc.expected, r.ModuleBody.AssignmentList); diff != "" {
-				t.Errorf("Module did not match expected, diff (-want, +got):\n%v", diff)
+				t.Errorf("ModuleName did not match expected, diff (-want, +got):\n%v", diff)
 			}
 		})
 	}
