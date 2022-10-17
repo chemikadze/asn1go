@@ -67,6 +67,7 @@ PartialAttribute ::= SEQUENCE {
      type       AttributeDescription,
      vals       SET OF value AttributeValue }
 
+-- TODO: generate proper type decl
 Attribute ::= PartialAttribute(WITH COMPONENTS {
      ...,
      vals (SIZE(1..MAX))})

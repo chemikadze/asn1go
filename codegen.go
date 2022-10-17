@@ -148,6 +148,9 @@ func (ctx *moduleContext) generateDeclarations(module ModuleDefinition) []goast.
 		switch a := assignment.(type) {
 		case TypeAssignment:
 			decls = append(decls, ctx.generateTypeDecl(a.TypeReference, a.Type))
+			if decl := ctx.generateAssociatedValuesIfNeeded(a.TypeReference, a.Type); decl != nil {
+				decls = append(decls, decl)
+			}
 		}
 	}
 	return decls
@@ -246,6 +249,41 @@ func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Ex
 	default:
 		// NullType
 		ctx.appendError(fmt.Errorf("ignoring unsupported type %#v", typeDescr))
+		return nil
+	}
+}
+
+func (ctx *moduleContext) generateAssociatedValuesIfNeeded(reference TypeReference, typeDescr Type) goast.Decl {
+	switch typeDescr := ctx.removeWrapperTypes(typeDescr).(type) {
+	case IntegerType:
+		if len(typeDescr.NamedNumberList) == 0 {
+			return nil
+		}
+		var specs []goast.Spec
+		for _, namedNumber := range typeDescr.NamedNumberList {
+			var valueExpr goast.Expr
+			switch v := namedNumber.Value.(type) {
+			case Number:
+				valueExpr = &goast.BasicLit{Value: fmt.Sprint(v.IntValue())}
+				if ctx.params.IntegerRepr == IntegerReprBigInt {
+					valueExpr = &goast.CallExpr{Fun: goast.NewIdent("big.NewInt"), Args: []goast.Expr{valueExpr}}
+				}
+			case DefinedValue:
+				ctx.appendError(fmt.Errorf("can't generate const for %v.%v: defined values not supported", reference, namedNumber.Name))
+				return nil
+			}
+			typeName := goifyName(string(reference))
+			specs = append(specs, &goast.ValueSpec{
+				Type:   goast.NewIdent(goifyName(string(reference))),
+				Names:  []*goast.Ident{goast.NewIdent(typeName + "Val" + goifyName(string(namedNumber.Name)))},
+				Values: []goast.Expr{valueExpr},
+			})
+		}
+		return &goast.GenDecl{
+			Tok:   gotoken.VAR,
+			Specs: specs,
+		}
+	default:
 		return nil
 	}
 }

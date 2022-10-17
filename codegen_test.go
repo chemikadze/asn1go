@@ -3,7 +3,11 @@ package asn1go
 import (
 	"bytes"
 	"github.com/google/go-cmp/cmp"
+	"go/token"
 	"testing"
+
+	goparser "go/parser"
+	goprint "go/printer"
 )
 
 func generateDeclarationsString(m ModuleDefinition) (string, error) {
@@ -168,6 +172,16 @@ func testParsingAndGeneration(t *testing.T, testCases []e2eTestCase) {
 		t.Run(tc.name, func(t *testing.T) {
 			m := parseModule(t, tc.asnModule)
 			expected := tc.goModule
+			fileAst, err := goparser.ParseFile(token.NewFileSet(), "testsample", bytes.NewBufferString(expected), 0)
+			if err != nil {
+				t.Fatalf("Syntax of expected go module is incorrect: %v", err)
+			}
+			normalizedBuf := &bytes.Buffer{}
+			if err := goprint.Fprint(normalizedBuf, token.NewFileSet(), fileAst); err != nil {
+				t.Fatalf("Failed to format generated go module: %v", err)
+			}
+			expected = normalizedBuf.String()
+
 			got, err := generateDeclarationsString(*m)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err.Error())
@@ -245,6 +259,44 @@ type Struct struct {
 	Explicit	bool	` + "`asn1:\"explicit,tag:2\"`" + `
 	Implicit	bool	` + "`asn1:\"tag:3\"`" + `
 }
+`,
+		},
+	}
+	testParsingAndGeneration(t, testCases)
+}
+
+func TestIntegerType(t *testing.T) {
+	testCases := []e2eTestCase{
+		{
+			name: "bare integer",
+			asnModule: `
+	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+		Int ::= INTEGER
+	END
+	`,
+			goModule: `package TestSpec
+
+type Int = int64
+`,
+		},
+		{
+			name: "integer with consts",
+			asnModule: `
+	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+		Int ::= INTEGER {
+			a(42),
+			b(-1)
+		}
+	END
+	`,
+			goModule: `package TestSpec
+
+type Int = int64
+
+var (
+	IntValA Int = 42
+	IntValB Int = -1
+)
 `,
 		},
 	}
