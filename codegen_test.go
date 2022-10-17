@@ -308,6 +308,30 @@ var (
 	testParsingAndGeneration(t, testCases)
 }
 
+func TestValueAssignments(t *testing.T) {
+	testCases := []e2eTestCase{
+		{
+			name: "primitive types",
+			asnModule: `
+	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+		myInt INTEGER ::= 42
+		myBool BOOLEAN ::= TRUE
+		myReal REAL ::= 3.14
+	END
+	`,
+			goModule: `package TestSpec
+
+var ValMyInt int64 = 42
+
+var ValMyBool bool = true
+
+var ValMyReal float64 = 3.14
+`,
+		},
+	}
+	testParsingAndGeneration(t, testCases)
+}
+
 func TestExtensionsE2E(t *testing.T) {
 	testcases := []e2eTestCase{
 		{
@@ -356,9 +380,10 @@ type (
 }
 
 func parseModule(t *testing.T, s string) *ModuleDefinition {
+	t.Helper()
 	def, err := ParseString(s)
 	if err != nil {
-		t.Fatalf("Failed to parse module: %v", err)
+		t.Fatalf("Failed to parse ASN.1 module: %v", err)
 	}
 	return def
 }

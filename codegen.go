@@ -195,6 +195,14 @@ func (ctx *moduleContext) tryGenerateValueAssignment(ref ValueReference, t Type,
 	switch val := val.(type) {
 	case Number:
 		valExpr = numberToExpr(val, ctx.params.IntegerRepr)
+	case Boolean:
+		if val {
+			valExpr = &goast.BasicLit{Value: "true"}
+		} else {
+			valExpr = &goast.BasicLit{Value: "false"}
+		}
+	case Real:
+		valExpr = &goast.BasicLit{Value: fmt.Sprint(val)}
 	default:
 		// TODO: produce a warning?
 		return nil
