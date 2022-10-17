@@ -151,6 +151,10 @@ func (ctx *moduleContext) generateDeclarations(module ModuleDefinition) []goast.
 			if decl := ctx.generateAssociatedValuesIfNeeded(a.TypeReference, a.Type); decl != nil {
 				decls = append(decls, decl)
 			}
+		case ValueAssignment:
+			if decl := ctx.tryGenerateValueAssignment(a.ValueReference, a.Type, a.Value); decl != nil {
+				decls = append(decls, decl)
+			}
 		}
 	}
 	return decls
@@ -183,6 +187,28 @@ func (ctx *moduleContext) generateTypeDecl(reference TypeReference, typeDescr Ty
 		})
 	}
 	return decl
+}
+
+func (ctx *moduleContext) tryGenerateValueAssignment(ref ValueReference, t Type, val Value) goast.Decl {
+	stubIsSet := false
+	var valExpr goast.Expr
+	switch val := val.(type) {
+	case Number:
+		valExpr = numberToExpr(val, ctx.params.IntegerRepr)
+	default:
+		// TODO: produce a warning?
+		return nil
+	}
+	return &goast.GenDecl{
+		Tok: gotoken.VAR,
+		Specs: []goast.Spec{
+			&goast.ValueSpec{
+				Names:  []*goast.Ident{valueRefToIdent(ref)},
+				Type:   ctx.generateTypeBody(t, &stubIsSet),
+				Values: []goast.Expr{valExpr},
+			},
+		},
+	}
 }
 
 func (ctx *moduleContext) generateTypeBody(typeDescr Type, isSet *bool) goast.Expr {
@@ -264,10 +290,7 @@ func (ctx *moduleContext) generateAssociatedValuesIfNeeded(reference TypeReferen
 			var valueExpr goast.Expr
 			switch v := namedNumber.Value.(type) {
 			case Number:
-				valueExpr = &goast.BasicLit{Value: fmt.Sprint(v.IntValue())}
-				if ctx.params.IntegerRepr == IntegerReprBigInt {
-					valueExpr = &goast.CallExpr{Fun: goast.NewIdent("big.NewInt"), Args: []goast.Expr{valueExpr}}
-				}
+				valueExpr = numberToExpr(v, ctx.params.IntegerRepr)
 			case DefinedValue:
 				if v.ModuleName != "" {
 					ctx.appendError(fmt.Errorf("%v.%v: value references from other modules are not supported", v.ModuleName, v.ValueName))
@@ -292,6 +315,15 @@ func (ctx *moduleContext) generateAssociatedValuesIfNeeded(reference TypeReferen
 
 func valueRefToIdent(ref ValueReference) *goast.Ident {
 	return goast.NewIdent("Val" + goifyName(string(ref)))
+}
+
+func numberToExpr(val Number, repr IntegerRepr) goast.Expr {
+	var valueExpr goast.Expr
+	valueExpr = &goast.BasicLit{Value: fmt.Sprint(val.IntValue())}
+	if repr == IntegerReprBigInt {
+		valueExpr = &goast.CallExpr{Fun: goast.NewIdent("big.NewInt"), Args: []goast.Expr{valueExpr}}
+	}
+	return valueExpr
 }
 
 func (ctx *moduleContext) generateChoiceType(t ChoiceType, isSet *bool) goast.Expr {

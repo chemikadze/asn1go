@@ -283,6 +283,7 @@ type Int = int64
 			name: "integer with consts",
 			asnModule: `
 	TestSpec DEFINITIONS IMPLICIT TAGS ::= BEGIN
+		d INTEGER ::= 42 
 		Int ::= INTEGER {
 			a(42),
 			b(-1),
@@ -291,6 +292,8 @@ type Int = int64
 	END
 	`,
 			goModule: `package TestSpec
+
+var ValD int64 = 42
 
 type Int = int64
 
