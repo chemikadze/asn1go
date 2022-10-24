@@ -17,6 +17,67 @@ so all its limitations (no real CHOICE support) apply for this project as well.
  As the result, Parser produces ASN1 module AST.
 3) AST is used by Code Generator to produce declarations, serialization, and deserialization code.
 
+## Supported features
+
+### Feature categories
+
+| Feature           | Parsing     | Codegen       |
+|-------------------|-------------|---------------|
+| Exports           | Syntax only | No            |
+| Imports           | Yes         | No            |
+| Type assignments  | Yes         | Yes           |
+| Value assignments | Yes         | Partial [^f1] |
+| XML               | No          |               |
+| Objects           | No          |               |
+| Parameterization  | No          |               |
+
+[^f1]: Only literal values are supported, referenced values are not implemented.
+
+### Types
+
+| Type              | Parsing   | Codegen                                |
+|-------------------|-----------|----------------------------------------|
+| BIT STRING        | Yes       | Yes; named bits not translated         |
+| BOOLEAN           | Yes       | Yes                                    |
+| CHARACTER STRING  | Yes       | Yes                                    |
+| CHOICE            | Yes       | Yes; common demoninator type is used   |
+| Embedded PDV      | No        |                                        |
+| External          | No        |                                        |
+| ENUMERATED        | Yes [^t4] | Yes; alternative values not translated |
+| Instance Of       | No        |                                        |
+| INTEGER           | Yes       | Yes                                    |
+| NULL              | Yes       |                                        |
+| Object Class      | No        |                                        |
+| Object Identifier | Yes       |                                        | 
+| OCTET STRING      | Yes       | Yes                                    |
+| REAL              | Yes       | Yes                                    |
+| Relative OID      | No        |                                        |
+| SEQUENCE          | Yes [^t1] | Yes                                    |
+| SEQUENCE OF       | Yes       | Yes                                    |
+| SET               | Yes [^t1] | Yes                                    |
+| SET OF            | Yes       | Yes                                    |
+| ANY               | Yes [^t2] | Yes                                    |
+| Tagged types      | Yes       | Yes [^t3]                              |
+| Constrained types | Partial   | Partial; generates wrapped type        |
+
+[^t1]: With ASN.1 syntax limitations: two component type lists, exceptions and extension addition groups are not supported, extensions are not exposed in generated Go code.
+[^t2]: Not defined in the latest ASN.1 standard.
+[^t3]: Used by encoding/asn1 only in SEQUENCE and SET fields. CHOICE with tagged alternatives is represented as RawValue.
+[^t4]: With ASN.1 syntax limitations: explicit extensibility and non-literal values are not supported.
+
+### Values
+
+| Value               | Parsing  | Codegen |
+|---------------------|----------|---------|
+| BOOLEAN             | Yes      | Yes     |
+| INTEGER             | Yes      | Yes     |
+| OID                 | Yes      | No      |
+| Real                | Yes      | Yes     |
+| Referenced          | No       |         |
+| Object class fields | No       |         |
+| BIT STRING          | No       |         |
+| Other               | No       |         |
+
 ## Roadmap
 
 1) Lexer
